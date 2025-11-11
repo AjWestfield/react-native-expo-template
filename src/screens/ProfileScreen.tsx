@@ -1,18 +1,60 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser, useAuth } from '@clerk/clerk-expo';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
-  const { signOut } = useAuth();
+  const { signOut, getToken } = useAuth();
   const navigation = useNavigation();
+  const [credits, setCredits] = useState<number>(0);
+  const [loadingCredits, setLoadingCredits] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCredits();
+    }, [])
+  );
+
+  const fetchCredits = async () => {
+    try {
+      setLoadingCredits(true);
+      const token = await getToken();
+      if (!token) {
+        console.error('No auth token available');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/credits`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCredits(data.credits || 0);
+      } else {
+        console.error('Failed to fetch credits');
+      }
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+    } finally {
+      setLoadingCredits(false);
+    }
+  };
+
+  const handleBuyCredits = () => {
+    navigation.navigate('Pricing' as never);
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -124,6 +166,40 @@ export default function ProfileScreen() {
             <Ionicons name="share-outline" size={20} color={colors.text.primary} />
             <Text style={styles.actionButtonText}>Share</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Credits Card */}
+        <View style={styles.section}>
+          <GlassCard style={styles.creditsCard}>
+            <LinearGradient
+              colors={['#667EEA', '#764BA2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.creditsGradient}
+            >
+              <View style={styles.creditsHeader}>
+                <Ionicons name="diamond" size={32} color="#FFFFFF" />
+                <Text style={styles.creditsTitle}>Your Credits</Text>
+              </View>
+
+              {loadingCredits ? (
+                <ActivityIndicator size="large" color="#FFFFFF" style={styles.creditsLoader} />
+              ) : (
+                <View style={styles.creditsContent}>
+                  <Text style={styles.creditsAmount}>{credits.toLocaleString()}</Text>
+                  <Text style={styles.creditsLabel}>Available Credits</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.buyCreditsButton}
+                onPress={handleBuyCredits}
+              >
+                <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+                <Text style={styles.buyCreditsText}>Buy More Credits</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </GlassCard>
         </View>
 
         {/* My Videos Section */}
@@ -340,5 +416,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FF4444',
+  },
+  creditsCard: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  creditsGradient: {
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+  },
+  creditsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  creditsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  creditsContent: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  creditsAmount: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: spacing.xs,
+  },
+  creditsLabel: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  creditsLoader: {
+    marginVertical: spacing.xl,
+  },
+  buyCreditsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  buyCreditsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
