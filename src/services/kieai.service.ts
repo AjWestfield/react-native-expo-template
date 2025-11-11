@@ -344,15 +344,9 @@ class KieAIService {
 
           // Check if completed successfully
           if (status.data.state === 'success' && status.data.resultJson) {
-            try {
-              const resultData = JSON.parse(status.data.resultJson);
-              // resultJson contains: {"resultUrls":["..."],"resultWaterMarkUrls":["..."]}
-              const videoUrl = resultData.resultUrls?.[0] || resultData.resultWaterMarkUrls?.[0];
-              if (videoUrl) {
-                return videoUrl;
-              }
-            } catch (parseError) {
-              console.error('Failed to parse Sora/Watermark resultJson:', parseError);
+            const videoUrl = this.extractResultUrl(status.data.resultJson);
+            if (videoUrl) {
+              return videoUrl;
             }
           }
 
@@ -389,6 +383,49 @@ class KieAIService {
       console.error('Get credits error:', error);
       return 0;
     }
+  }
+
+  /**
+   * Extract the first available result URL from resultJson payloads
+   */
+  private extractResultUrl(resultJson?: string | null): string | null {
+    if (!resultJson || typeof resultJson !== 'string') {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(resultJson);
+      const candidateFields = [
+        parsed.resultUrls,
+        parsed.resultUrl,
+        parsed.resultWaterMarkUrls,
+        parsed.resultWatermarkUrls,
+        parsed.resultVideoUrls,
+        parsed.resultVideoUrl,
+        parsed.videoUrls,
+        parsed.videoUrl,
+        parsed.url,
+      ];
+
+      for (const field of candidateFields) {
+        if (!field) {
+          continue;
+        }
+
+        if (Array.isArray(field)) {
+          const firstUrl = field.find((item) => typeof item === 'string' && item.startsWith('http'));
+          if (firstUrl) {
+            return firstUrl;
+          }
+        } else if (typeof field === 'string' && field.startsWith('http')) {
+          return field;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse resultJson while extracting video URL:', error);
+    }
+
+    return null;
   }
 }
 
