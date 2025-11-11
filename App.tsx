@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
@@ -12,75 +13,85 @@ import { darkTheme, colors } from './src/theme/colors';
 
 const Tab = createBottomTabNavigator();
 
+function Navigation() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap;
+
+          if (route.name === 'Generate') {
+            iconName = focused ? 'sparkles' : 'sparkles-outline';
+          } else if (route.name === 'Gallery') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person-circle' : 'person-circle-outline';
+          } else {
+            iconName = 'help-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.text.primary,
+        tabBarInactiveTintColor: colors.text.tertiary,
+        tabBarStyle: {
+          position: 'absolute',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          borderTopColor: colors.glass.border,
+          borderTopWidth: 1,
+          paddingBottom: Math.max(insets.bottom, 10),
+          paddingTop: 10,
+          height: 60 + Math.max(insets.bottom, 10),
+          backdropFilter: 'blur(20px)',
+        },
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={StyleSheet.absoluteFillObject}
+          />
+        ),
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen
+        name="Generate"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'Generate',
+        }}
+      />
+      <Tab.Screen
+        name="Gallery"
+        component={ExploreScreen}
+        options={{
+          tabBarLabel: 'Gallery',
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 export default function App() {
   return (
-    <NavigationContainer theme={darkTheme}>
-      <StatusBar style="light" />
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap;
-
-            if (route.name === 'Generate') {
-              iconName = focused ? 'sparkles' : 'sparkles-outline';
-            } else if (route.name === 'Gallery') {
-              iconName = focused ? 'grid' : 'grid-outline';
-            } else if (route.name === 'Profile') {
-              iconName = focused ? 'person-circle' : 'person-circle-outline';
-            } else {
-              iconName = 'help-outline';
-            }
-
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: colors.text.primary,
-          tabBarInactiveTintColor: colors.text.tertiary,
-          tabBarStyle: {
-            position: 'absolute',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            borderTopColor: colors.glass.border,
-            borderTopWidth: 1,
-            paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-            paddingTop: 10,
-            height: Platform.OS === 'ios' ? 85 : 65,
-            backdropFilter: 'blur(20px)',
-          },
-          tabBarBackground: () => (
-            <BlurView
-              intensity={80}
-              tint="dark"
-              style={StyleSheet.absoluteFillObject}
-            />
-          ),
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-          },
-          headerShown: false,
-        })}
-      >
-        <Tab.Screen
-          name="Generate"
-          component={HomeScreen}
-          options={{
-            tabBarLabel: 'Generate',
-          }}
-        />
-        <Tab.Screen
-          name="Gallery"
-          component={ExploreScreen}
-          options={{
-            tabBarLabel: 'Gallery',
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarLabel: 'Profile',
-          }}
-        />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer theme={darkTheme}>
+        <StatusBar style="light" />
+        <Navigation />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

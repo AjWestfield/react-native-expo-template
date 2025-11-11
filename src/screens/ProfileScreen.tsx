@@ -2,10 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const settingsItems = [
     {
       icon: 'videocam-outline',
@@ -57,7 +59,13 @@ export default function ProfileScreen() {
       />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + 100,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -171,11 +179,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: spacing.xxxl,
+    // paddingBottom is set dynamically with safe area insets
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
   headerTitle: {

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   GlassCard,
   GlassButton,
@@ -38,6 +39,7 @@ const ASPECT_RATIOS: AspectRatio[] = ['16:9', '9:16', '1:1', '4:3'];
 const FPS_OPTIONS: FPS[] = [24, 30, 60];
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<VideoStyle>('cinematic');
   const [duration, setDuration] = useState(10); // seconds
@@ -98,7 +100,13 @@ export default function HomeScreen() {
       />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + 100,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
@@ -319,11 +327,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: spacing.xxxl,
+    // paddingBottom is set dynamically with safe area insets
   },
   hero: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
     alignItems: 'center',
   },
