@@ -2,9 +2,30 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { useFilming } from '../context/FilmingContext';
 
-export default function AddScreen() {
+interface AddScreenProps {
+  navigation: any;
+}
+
+export default function AddScreen({ navigation }: AddScreenProps) {
+  const { selectedFilmingType, filmingTypes } = useFilming();
+
+  const getSelectedFilmingTypeName = () => {
+    if (!selectedFilmingType) return null;
+    return filmingTypes.find(t => t.id === selectedFilmingType)?.name;
+  };
+
   const addOptions = [
+    {
+      icon: 'film',
+      title: 'Select Filming Type',
+      description: selectedFilmingType
+        ? `Current: ${getSelectedFilmingTypeName()}`
+        : 'Choose your camera type',
+      color: '#8b5cf6',
+      onPress: () => navigation.navigate('FilmingType'),
+    },
     { icon: 'camera', title: 'Take Photo', description: 'Capture a new photo', color: colors.primary },
     { icon: 'images', title: 'Choose from Gallery', description: 'Select from your photos', color: colors.accent },
     { icon: 'videocam', title: 'Record Video', description: 'Create a new video', color: colors.error },
@@ -22,7 +43,11 @@ export default function AddScreen() {
 
       <View style={styles.optionsContainer}>
         {addOptions.map((option, index) => (
-          <TouchableOpacity key={index} style={styles.optionCard}>
+          <TouchableOpacity
+            key={index}
+            style={styles.optionCard}
+            onPress={option.onPress || (() => {})}
+          >
             <View style={[styles.iconContainer, { backgroundColor: `${option.color}20` }]}>
               <Ionicons name={option.icon as any} size={32} color={option.color} />
             </View>
