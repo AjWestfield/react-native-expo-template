@@ -11,15 +11,9 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
-import { GlassCard } from '../components';
-
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  gradient: string[];
-}
+import { GlassCard, TemplatePreview } from '../components';
+import { Template } from '../types/image';
+import { useNavigation } from '@react-navigation/native';
 
 const templates: Template[] = [
   {
@@ -28,6 +22,8 @@ const templates: Template[] = [
     description: 'Doorbell security camera footage style',
     icon: 'videocam',
     gradient: ['rgba(59, 130, 246, 0.3)', 'rgba(147, 51, 234, 0.3)'],
+    previewPrompt: 'A person approaching a front door with a package delivery',
+    styleModifier: 'with doorbell camera perspective, night vision effect, motion activated recording aesthetic',
   },
   {
     id: 'security-camera',
@@ -35,6 +31,8 @@ const templates: Template[] = [
     description: 'CCTV surveillance camera aesthetic',
     icon: 'eye',
     gradient: ['rgba(239, 68, 68, 0.3)', 'rgba(251, 146, 60, 0.3)'],
+    previewPrompt: 'A busy parking lot with cars and pedestrians',
+    styleModifier: 'with CCTV surveillance camera aesthetic, grainy monochrome, wide angle lens, timestamp overlay',
   },
   {
     id: 'smartphone',
@@ -42,6 +40,8 @@ const templates: Template[] = [
     description: 'Mobile phone recording style',
     icon: 'phone-portrait',
     gradient: ['rgba(34, 197, 94, 0.3)', 'rgba(59, 130, 246, 0.3)'],
+    previewPrompt: 'Friends laughing together at a casual gathering',
+    styleModifier: 'with smartphone camera recording style, portrait mode, natural lighting, handheld perspective',
   },
   {
     id: 'body-cam',
@@ -49,6 +49,8 @@ const templates: Template[] = [
     description: 'Police body camera footage',
     icon: 'body',
     gradient: ['rgba(168, 85, 247, 0.3)', 'rgba(236, 72, 153, 0.3)'],
+    previewPrompt: 'A police officer walking down a street during patrol',
+    styleModifier: 'with body camera footage aesthetic, chest-mounted perspective, encrypted overlay, timestamp and GPS data',
   },
   {
     id: 'drone',
@@ -56,6 +58,8 @@ const templates: Template[] = [
     description: 'Aerial drone footage perspective',
     icon: 'airplane',
     gradient: ['rgba(14, 165, 233, 0.3)', 'rgba(6, 182, 212, 0.3)'],
+    previewPrompt: 'Sweeping aerial view of a beautiful coastline with waves',
+    styleModifier: 'with aerial drone footage perspective, wide establishing shot, HUD overlay with altitude and speed data',
   },
   {
     id: 'dashcam',
@@ -63,15 +67,18 @@ const templates: Template[] = [
     description: 'Vehicle dashboard camera view',
     icon: 'car',
     gradient: ['rgba(245, 158, 11, 0.3)', 'rgba(239, 68, 68, 0.3)'],
+    previewPrompt: 'Driving through a scenic mountain road during sunset',
+    styleModifier: 'with dashboard camera view, driver perspective, speed indicator, GPS coordinates overlay',
   },
 ];
 
 export default function TemplatesScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const handleTemplatePress = (template: Template) => {
     console.log('Selected template:', template.name);
-    // TODO: Navigate to generation screen with selected template
+    navigation.navigate('ImageGenerator' as never, { template } as never);
   };
 
   return (
@@ -83,7 +90,7 @@ export default function TemplatesScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 10) }]}>
-        <Text style={styles.title}>Video Templates</Text>
+        <Text style={styles.title}>Image Templates</Text>
         <Text style={styles.subtitle}>Choose your camera style</Text>
       </View>
 
@@ -103,18 +110,9 @@ export default function TemplatesScreen() {
             onPress={() => handleTemplatePress(template)}
           >
             <GlassCard style={styles.templateCard}>
-              <LinearGradient
-                colors={template.gradient}
-                style={styles.iconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons
-                  name={template.icon}
-                  size={32}
-                  color={colors.text.primary}
-                />
-              </LinearGradient>
+              <View style={styles.previewContainer}>
+                <TemplatePreview template={template} size="small" />
+              </View>
 
               <View style={styles.templateInfo}>
                 <Text style={styles.templateName}>{template.name}</Text>
@@ -185,6 +183,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     marginBottom: 16,
+  },
+  previewContainer: {
+    marginRight: 16,
   },
   iconContainer: {
     width: 60,

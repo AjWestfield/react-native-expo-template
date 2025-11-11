@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -10,9 +11,27 @@ import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TemplatesScreen from './src/screens/TemplatesScreen';
+import { ImageGeneratorScreen } from './src/screens/ImageGeneratorScreen';
+import ImageGalleryScreen from './src/screens/ImageGalleryScreen';
 import { darkTheme, colors } from './src/theme/colors';
 
 const Tab = createBottomTabNavigator();
+const TemplatesStack = createStackNavigator();
+
+function TemplatesNavigator() {
+  return (
+    <TemplatesStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        cardStyle: { backgroundColor: 'transparent' },
+      }}
+    >
+      <TemplatesStack.Screen name="TemplatesList" component={TemplatesScreen} />
+      <TemplatesStack.Screen name="ImageGenerator" component={ImageGeneratorScreen} />
+      <TemplatesStack.Screen name="ImageGallery" component={ImageGalleryScreen} />
+    </TemplatesStack.Navigator>
+  );
+}
 
 function Navigation() {
   const insets = useSafeAreaInsets();
@@ -72,7 +91,7 @@ function Navigation() {
       />
       <Tab.Screen
         name="Templates"
-        component={TemplatesScreen}
+        component={TemplatesNavigator}
         options={{
           tabBarLabel: 'Templates',
         }}

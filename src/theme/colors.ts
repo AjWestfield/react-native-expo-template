@@ -36,7 +36,9 @@ export const colors = {
   // Text colors
   text: {
     primary: '#FFFFFF',      // Pure white
+    white: '#FFFFFF',        // Pure white (alias)
     secondary: '#A0A0A0',    // Light gray
+    medium: '#A0A0A0',       // Light gray (alias)
     tertiary: '#666666',     // Medium gray
     quaternary: '#404040',   // Dark gray (subtle)
   },
@@ -83,6 +85,12 @@ export const typography = {
     fontWeight: '600' as const,
     letterSpacing: -0.2,
     lineHeight: 28,
+  },
+  title3: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    letterSpacing: -0.2,
+    lineHeight: 25,
   },
   headline: {
     fontSize: 17,
