@@ -1,225 +1,286 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GlassCard } from '../components';
+import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
 export default function ProfileScreen() {
-  const menuItems = [
-    { icon: 'person-outline', title: 'Edit Profile', subtitle: 'Update your information' },
-    { icon: 'notifications-outline', title: 'Notifications', subtitle: 'Manage notification settings' },
-    { icon: 'lock-closed-outline', title: 'Privacy', subtitle: 'Control your privacy' },
-    { icon: 'shield-checkmark-outline', title: 'Security', subtitle: 'Manage security settings' },
-    { icon: 'help-circle-outline', title: 'Help & Support', subtitle: 'Get help and support' },
-    { icon: 'information-circle-outline', title: 'About', subtitle: 'App information' },
+  const settingsItems = [
+    {
+      icon: 'videocam-outline',
+      title: 'Video Quality',
+      subtitle: 'Set default video quality',
+      value: 'HD',
+    },
+    {
+      icon: 'color-palette-outline',
+      title: 'Default Style',
+      subtitle: 'Choose your preferred style',
+      value: 'Cinematic',
+    },
+    {
+      icon: 'film-outline',
+      title: 'Export Settings',
+      subtitle: 'Configure video exports',
+      value: 'MP4',
+    },
+    {
+      icon: 'settings-outline',
+      title: 'Advanced',
+      subtitle: 'Advanced generation settings',
+      value: null,
+    },
+    {
+      icon: 'help-circle-outline',
+      title: 'Help & Support',
+      subtitle: 'Get help and tutorials',
+      value: null,
+    },
+    {
+      icon: 'information-circle-outline',
+      title: 'About',
+      subtitle: 'App information',
+      value: null,
+    },
   ];
 
+  const handleSettingPress = (title: string) => {
+    Alert.alert(title, 'This setting would open in a full app');
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color={colors.text.muted} />
-          </View>
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="camera" size={16} color="#fff" />
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#000000', '#0A0A0A', '#000000']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile</Text>
         </View>
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>john.doe@example.com</Text>
+
+        {/* User Card */}
+        <View style={styles.section}>
+          <GlassCard style={styles.userCard}>
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={['#667EEA', '#764BA2']}
+                style={styles.avatar}
+              >
+                <Ionicons name="person" size={40} color={colors.text.primary} />
+              </LinearGradient>
+            </View>
+            <Text style={styles.userName}>Creative Studio</Text>
+            <Text style={styles.userEmail}>studio@example.com</Text>
+          </GlassCard>
+        </View>
 
         {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>2.5k</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>1.2k</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>345</Text>
-            <Text style={styles.statLabel}>Posts</Text>
+        <View style={styles.section}>
+          <View style={styles.statsGrid}>
+            <GlassCard style={styles.statCard}>
+              <Ionicons
+                name="videocam"
+                size={24}
+                color={colors.text.primary}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statValue}>24</Text>
+              <Text style={styles.statLabel}>Videos Created</Text>
+            </GlassCard>
+
+            <GlassCard style={styles.statCard}>
+              <Ionicons
+                name="time"
+                size={24}
+                color={colors.text.primary}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statValue}>5:32</Text>
+              <Text style={styles.statLabel}>Total Duration</Text>
+            </GlassCard>
+
+            <GlassCard style={styles.statCard}>
+              <Ionicons
+                name="heart"
+                size={24}
+                color={colors.text.primary}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statLabel}>Favorites</Text>
+            </GlassCard>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          {settingsItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.settingItem}
+              onPress={() => handleSettingPress(item.title)}
+            >
+              <GlassCard style={styles.settingCard}>
+                <View style={styles.settingIcon}>
+                  <Ionicons
+                    name={item.icon as any}
+                    size={20}
+                    color={colors.text.primary}
+                  />
+                </View>
+                <View style={styles.settingContent}>
+                  <Text style={styles.settingTitle}>{item.title}</Text>
+                  <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+                </View>
+                <View style={styles.settingRight}>
+                  {item.value && (
+                    <Text style={styles.settingValue}>{item.value}</Text>
+                  )}
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={colors.text.tertiary}
+                  />
+                </View>
+              </GlassCard>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {/* Menu Items */}
-      <View style={styles.menuSection}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.menuItem}>
-            <View style={styles.menuIconContainer}>
-              <Ionicons name={item.icon as any} size={24} color={colors.text.secondary} />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.muted} />
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton}>
-        <Ionicons name="log-out-outline" size={20} color={colors.error} />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.version}>Version 1.0.0</Text>
-    </ScrollView>
+        {/* Version */}
+        <Text style={styles.version}>AI Video Generator v1.0.0</Text>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.primary,
   },
-  profileHeader: {
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: spacing.xxxl,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  headerTitle: {
+    ...typography.hero,
+    color: colors.text.primary,
+  },
+  section: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    ...typography.title2,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+  },
+  userCard: {
+    padding: spacing.xl,
     alignItems: 'center',
-    padding: 24,
-    paddingTop: 32,
   },
   avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.card,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.primary,
   },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.background,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '700',
+  userName: {
+    ...typography.title1,
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  email: {
-    fontSize: 14,
+  userEmail: {
+    ...typography.subheadline,
     color: colors.text.secondary,
-    marginBottom: 24,
   },
-  statsContainer: {
+  statsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 32,
+    gap: spacing.md,
   },
-  statItem: {
+  statCard: {
     flex: 1,
+    padding: spacing.md,
     alignItems: 'center',
+  },
+  statIcon: {
+    marginBottom: spacing.sm,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    ...typography.title2,
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+    fontWeight: '700',
   },
   statLabel: {
-    fontSize: 13,
+    ...typography.caption1,
     color: colors.text.secondary,
+    textAlign: 'center',
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.border,
+  settingItem: {
+    marginBottom: spacing.sm,
   },
-  editButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  menuSection: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  menuItem: {
+  settingCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: spacing.md,
   },
-  menuIconContainer: {
+  settingIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.cardHover,
+    backgroundColor: colors.glass.backgroundLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: spacing.md,
   },
-  menuContent: {
+  settingContent: {
     flex: 1,
   },
-  menuTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  settingTitle: {
+    ...typography.headline,
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  menuSubtitle: {
-    fontSize: 13,
+  settingSubtitle: {
+    ...typography.caption1,
     color: colors.text.secondary,
   },
-  logoutButton: {
+  settingRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    marginHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.error + '40',
+    gap: spacing.sm,
   },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.error,
-    marginLeft: 8,
+  settingValue: {
+    ...typography.subheadline,
+    color: colors.text.secondary,
+    fontWeight: '500',
   },
   version: {
+    ...typography.caption1,
+    color: colors.text.tertiary,
     textAlign: 'center',
-    fontSize: 12,
-    color: colors.text.muted,
-    marginBottom: 32,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
 });

@@ -1,179 +1,288 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { VideoCard } from '../components';
+import { colors, typography, spacing, borderRadius } from '../theme/colors';
+import { GeneratedVideo } from '../types/video';
+
+type FilterType = 'all' | 'today' | 'week' | 'favorites';
+
+const FILTERS: { value: FilterType; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'favorites', label: 'Favorites' },
+];
+
+// Mock video data
+const MOCK_VIDEOS: GeneratedVideo[] = [
+  {
+    id: '1',
+    prompt: 'A cinematic drone shot of a futuristic city at sunset',
+    style: 'cinematic',
+    duration: 10,
+    aspectRatio: '16:9',
+    fps: 30,
+    createdAt: new Date('2025-11-11'),
+    thumbnailGradient: ['#FF6B6B', '#4ECDC4'],
+    isFavorite: true,
+  },
+  {
+    id: '2',
+    prompt: 'Anime style magical girl transformation sequence',
+    style: 'anime',
+    duration: 15,
+    aspectRatio: '9:16',
+    fps: 24,
+    createdAt: new Date('2025-11-10'),
+    thumbnailGradient: ['#A8E6CF', '#FFD3B6'],
+    isFavorite: false,
+  },
+  {
+    id: '3',
+    prompt: 'Realistic ocean waves crashing on a beach',
+    style: 'realistic',
+    duration: 20,
+    aspectRatio: '16:9',
+    fps: 60,
+    createdAt: new Date('2025-11-09'),
+    thumbnailGradient: ['#667EEA', '#764BA2'],
+    isFavorite: true,
+  },
+  {
+    id: '4',
+    prompt: 'Abstract flowing particles in vibrant colors',
+    style: 'abstract',
+    duration: 30,
+    aspectRatio: '1:1',
+    fps: 30,
+    createdAt: new Date('2025-11-08'),
+    thumbnailGradient: ['#F093FB', '#F5576C'],
+    isFavorite: false,
+  },
+  {
+    id: '5',
+    prompt: 'Cinematic slow motion of coffee being poured',
+    style: 'cinematic',
+    duration: 8,
+    aspectRatio: '16:9',
+    fps: 60,
+    createdAt: new Date('2025-11-07'),
+    thumbnailGradient: ['#4FACFE', '#00F2FE'],
+    isFavorite: false,
+  },
+  {
+    id: '6',
+    prompt: 'Realistic time-lapse of a flower blooming',
+    style: 'realistic',
+    duration: 12,
+    aspectRatio: '4:3',
+    fps: 30,
+    createdAt: new Date('2025-11-06'),
+    thumbnailGradient: ['#43E97B', '#38F9D7'],
+    isFavorite: true,
+  },
+];
 
 export default function ExploreScreen() {
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
+  const [videos, setVideos] = useState<GeneratedVideo[]>(MOCK_VIDEOS);
+
+  const handleVideoPress = (video: GeneratedVideo) => {
+    Alert.alert('Video Preview', `Playing: ${video.prompt}`);
+  };
+
+  const handleFavoriteToggle = (videoId: string) => {
+    setVideos((prev) =>
+      prev.map((v) =>
+        v.id === videoId ? { ...v, isFavorite: !v.isFavorite } : v
+      )
+    );
+  };
+
+  const filteredVideos = videos.filter((video) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const videoDate = new Date(video.createdAt);
+    videoDate.setHours(0, 0, 0, 0);
+
+    switch (selectedFilter) {
+      case 'today':
+        return videoDate.getTime() === today.getTime();
+      case 'week':
+        return videoDate >= weekAgo;
+      case 'favorites':
+        return video.isFavorite;
+      default:
+        return true;
+    }
+  });
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.text.muted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search..."
-            placeholderTextColor={colors.text.muted}
-          />
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#000000', '#0A0A0A', '#000000']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Gallery</Text>
+          <Text style={styles.headerSubtitle}>
+            {filteredVideos.length} video{filteredVideos.length !== 1 ? 's' : ''}
+          </Text>
         </View>
-      </View>
 
-      {/* Categories */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['All', 'Technology', 'Design', 'Business', 'Health', 'Travel'].map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryChip,
-                category === 'All' && styles.categoryChipActive,
-              ]}
-            >
-              <Text
+        {/* Filter Tabs */}
+        <View style={styles.filtersContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersScroll}
+          >
+            {FILTERS.map((filter) => (
+              <TouchableOpacity
+                key={filter.value}
                 style={[
-                  styles.categoryText,
-                  category === 'All' && styles.categoryTextActive,
+                  styles.filterButton,
+                  selectedFilter === filter.value && styles.filterButtonActive,
                 ]}
+                onPress={() => setSelectedFilter(filter.value)}
               >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedFilter === filter.value && styles.filterTextActive,
+                  ]}
+                >
+                  {filter.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-      {/* Explore Grid */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Discover</Text>
-        {[1, 2, 3, 4].map((item) => (
-          <TouchableOpacity key={item} style={styles.exploreCard}>
-            <View style={styles.exploreImagePlaceholder}>
-              <Ionicons name="image-outline" size={32} color={colors.text.muted} />
-            </View>
-            <View style={styles.exploreContent}>
-              <Text style={styles.exploreTitle}>Explore Item {item}</Text>
-              <Text style={styles.exploreDescription}>
-                Discover amazing content and connect with others
-              </Text>
-              <View style={styles.exploreMeta}>
-                <View style={styles.metaItem}>
-                  <Ionicons name="eye-outline" size={14} color={colors.text.muted} />
-                  <Text style={styles.metaText}>2.3k</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Ionicons name="heart-outline" size={14} color={colors.text.muted} />
-                  <Text style={styles.metaText}>456</Text>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+        {/* Video Grid */}
+        {filteredVideos.length > 0 ? (
+          <View style={styles.grid}>
+            {filteredVideos.map((video, index) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onPress={() => handleVideoPress(video)}
+                onFavorite={() => handleFavoriteToggle(video.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="videocam-off-outline"
+              size={64}
+              color={colors.text.tertiary}
+            />
+            <Text style={styles.emptyTitle}>No videos found</Text>
+            <Text style={styles.emptySubtitle}>
+              {selectedFilter === 'favorites'
+                ? 'Favorite videos to see them here'
+                : 'Generate your first video to get started'}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.primary,
   },
-  searchContainer: {
-    padding: 24,
-    paddingBottom: 16,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchInput: {
+  scrollView: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+  },
+  contentContainer: {
+    paddingBottom: spacing.xxxl,
+  },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  headerTitle: {
+    ...typography.hero,
     color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 16,
-  },
-  categoryChip: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  categoryChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '600',
+  headerSubtitle: {
+    ...typography.subheadline,
     color: colors.text.secondary,
   },
-  categoryTextActive: {
-    color: '#ffffff',
+  filtersContainer: {
+    marginBottom: spacing.lg,
   },
-  exploreCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+  filtersScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  filterButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.glass.background,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glass.border,
+    marginRight: spacing.sm,
   },
-  exploreImagePlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
-    backgroundColor: colors.cardHover,
+  filterButtonActive: {
+    backgroundColor: colors.glass.backgroundLight,
+    borderColor: colors.glass.borderLight,
+  },
+  filterText: {
+    ...typography.subheadline,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  filterTextActive: {
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'space-between',
+  },
+  emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing.xl,
   },
-  exploreContent: {
-    flex: 1,
-  },
-  exploreTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  emptyTitle: {
+    ...typography.title2,
     color: colors.text.primary,
-    marginBottom: 6,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  exploreDescription: {
-    fontSize: 14,
+  emptySubtitle: {
+    ...typography.body,
     color: colors.text.secondary,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  exploreMeta: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  metaText: {
-    fontSize: 13,
-    color: colors.text.muted,
+    textAlign: 'center',
   },
 });
