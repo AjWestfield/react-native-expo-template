@@ -8,3 +8,4 @@ export { SelectableGlassCard } from './SelectableGlassCard';
 export { BenefitItem } from './BenefitItem';
 export { NotificationMockup } from './NotificationMockup';
 export { GoogleIcon } from './GoogleIcon';
+export { OnboardingLayout } from './OnboardingLayout';

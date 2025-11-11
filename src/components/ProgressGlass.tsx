@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, DimensionValue } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
@@ -12,7 +12,7 @@ export const ProgressGlass: React.FC<ProgressGlassProps> = ({
   progress,
   label = 'Generating...',
 }) => {
-  const progressWidth = `${Math.max(0, Math.min(100, progress))}%`;
+  const progressWidth: DimensionValue = `${Math.max(0, Math.min(100, progress))}%`;
 
   return (
     <View style={styles.container}>

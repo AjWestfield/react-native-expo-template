@@ -1,8 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabNavigator } from './MainTabNavigator';
-import PricingScreen from '../screens/PricingScreen';
-import PaymentScreen from '../screens/PaymentScreen';
+import { ResponsiveNavigator } from './ResponsiveNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -13,18 +11,7 @@ export const MainStackNavigator: React.FC = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen
-        name="MainTabs"
-        component={MainTabNavigator}
-      />
-      <Stack.Screen
-        name="Pricing"
-        component={PricingScreen}
-      />
-      <Stack.Screen
-        name="Payment"
-        component={PaymentScreen}
-      />
+      <Stack.Screen name="MainTabs" component={ResponsiveNavigator} />
     </Stack.Navigator>
   );
 };

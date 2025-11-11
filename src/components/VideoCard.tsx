@@ -1,8 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  StyleProp,
+  ViewStyle,
+  ColorValue,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme/colors';
 import { GeneratedVideo } from '../types/video';
 
@@ -11,94 +19,148 @@ interface VideoCardProps {
   onPress: () => void;
   onFavorite?: () => void;
   fullWidth?: boolean;
+  onDelete?: () => void;
+  deleting?: boolean;
+  style?: StyleProp<ViewStyle>;
+  showPrompt?: boolean;
 }
-
-const { width } = Dimensions.get('window');
 
 export const VideoCard: React.FC<VideoCardProps> = ({
   video,
   onPress,
   onFavorite,
   fullWidth = false,
+  onDelete,
+  deleting = false,
+  style,
+  showPrompt = true,
 }) => {
-  // Calculate card width based on layout
-  const cardWidth = fullWidth
-    ? width - spacing.lg * 2
-    : (width - spacing.lg * 2 - spacing.md) / 2;
+  const previewAspectRatio = fullWidth ? 5 / 7 : 9 / 16;
+  const previewRadius = borderRadius.xl;
+  const contentPadding = fullWidth ? spacing.lg : spacing.md;
+  const iconSize = fullWidth ? 20 : 18;
+  const metaIconSize = fullWidth ? 14 : 12;
 
-  // Use vertical aspect ratio (9:16) but more compact for full width single view
-  const aspectRatioHeight = fullWidth ? cardWidth * 1.2 : cardWidth * 1.777;
+  const defaultGradient: [ColorValue, ColorValue] = ['#4FACFE', '#00F2FE'];
+  const gradientColors: [ColorValue, ColorValue, ...ColorValue[]] =
+    video.thumbnailGradient && video.thumbnailGradient.length >= 2
+      ? [
+          video.thumbnailGradient[0],
+          video.thumbnailGradient[1],
+          ...video.thumbnailGradient.slice(2),
+        ]
+      : defaultGradient;
+
+  const formattedDate = new Date(video.createdAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
-    <TouchableOpacity
-      style={[styles.container, fullWidth && { width: cardWidth }]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View
-        style={[
-          styles.card,
-          {
-            height: aspectRatioHeight + 80,
-          },
-        ]}
-      >
-        {/* Video Thumbnail with Gradient */}
-        <View style={[styles.thumbnail, { height: aspectRatioHeight }]}>
-          <LinearGradient
-            colors={video.thumbnailGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
+    <TouchableOpacity style={[styles.container, style]} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.card, fullWidth ? styles.cardFullWidth : styles.cardGrid]}>
+        <View
+          style={[
+            styles.thumbnailWrapper,
+            { borderRadius: previewRadius, marginBottom: spacing.sm },
+          ]}
+        >
+          <View style={[styles.thumbnail, { aspectRatio: previewAspectRatio }]}>
+            {video.thumbnailUri ? (
+              <Image
+                source={{ uri: video.thumbnailUri }}
+                style={styles.thumbnailImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <LinearGradient
+                colors={gradientColors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+            )}
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.35)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.thumbnailAccent} />
 
-          {/* Play Icon Overlay */}
-          <View style={styles.playOverlay}>
-            <BlurView intensity={20} tint="dark" style={styles.playButton}>
-              <Ionicons name="play" size={24} color={colors.text.primary} />
-            </BlurView>
+            {/* Play Icon Overlay */}
+            <View style={styles.playOverlay}>
+              <View style={styles.playButton}>
+                <Ionicons name="play" size={iconSize} color={colors.text.primary} />
+              </View>
+            </View>
+
+            {/* Duration Badge */}
+            <View style={styles.durationBadge}>
+              <View style={styles.durationChip}>
+                <Text style={styles.durationText}>{video.duration}s</Text>
+              </View>
+            </View>
+
+            {/* Delete Button */}
+            {onDelete && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={onDelete}
+                disabled={deleting}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.helperChip}>
+                  <Ionicons
+                    name="trash-outline"
+                    size={16}
+                    color={deleting ? colors.text.tertiary : colors.text.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Favorite Button */}
+            {onFavorite && (
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={onFavorite}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.helperChip}>
+                  <Ionicons
+                    name={video.isFavorite ? 'heart' : 'heart-outline'}
+                    size={16}
+                    color={colors.text.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
-
-          {/* Duration Badge */}
-          <View style={styles.durationBadge}>
-            <BlurView intensity={30} tint="dark" style={styles.durationBlur}>
-              <Text style={styles.durationText}>{video.duration}s</Text>
-            </BlurView>
-          </View>
-
-          {/* Favorite Button */}
-          {onFavorite && (
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={onFavorite}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <BlurView intensity={30} tint="dark" style={styles.favoriteBlur}>
-                <Ionicons
-                  name={video.isFavorite ? 'heart' : 'heart-outline'}
-                  size={18}
-                  color={colors.text.primary}
-                />
-              </BlurView>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Video Info */}
-        <View style={styles.info}>
-          <Text style={styles.prompt} numberOfLines={2}>
-            {video.prompt}
-          </Text>
-          <View style={styles.meta}>
-            <Ionicons name="videocam-outline" size={12} color={colors.text.tertiary} />
-            <Text style={styles.metaText}>{video.style}</Text>
-            <View style={styles.dot} />
-            <Text style={styles.metaText}>
-              {new Date(video.createdAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })}
+        <View
+          style={[styles.info, { paddingHorizontal: contentPadding, paddingBottom: contentPadding }]}
+        >
+          <View style={styles.chipRow}>
+            <View style={styles.primaryChip}>
+              <Ionicons name="videocam-outline" size={metaIconSize} color={colors.text.primary} />
+              <Text style={styles.primaryChipText}>{video.style}</Text>
+            </View>
+            <View style={styles.secondaryChip}>
+              <Ionicons name="time-outline" size={metaIconSize} color={colors.text.secondary} />
+              <Text style={styles.secondaryChipText}>{video.aspectRatio}</Text>
+            </View>
+          </View>
+
+          {showPrompt && (
+            <Text style={[styles.prompt, fullWidth && styles.promptFullWidth]} numberOfLines={2}>
+              {video.prompt}
             </Text>
+          )}
+          <View style={styles.metaRow}>
+            <Text style={styles.metaText}>{formattedDate}</Text>
+            <View style={styles.metaDivider} />
+            <Text style={styles.metaText}>{video.fps} fps</Text>
           </View>
         </View>
       </View>
@@ -108,15 +170,27 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    // width is set dynamically
+    width: '100%',
   },
   card: {
-    borderRadius: borderRadius.lg,
+    width: '100%',
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(9, 9, 9, 0.92)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
     overflow: 'hidden',
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
     ...shadows.glass,
+  },
+  cardGrid: {},
+  cardFullWidth: {},
+  thumbnailWrapper: {
+    width: '100%',
+    overflow: 'hidden',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    marginBottom: 0,
   },
   thumbnail: {
     width: '100%',
@@ -124,20 +198,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
+  thumbnailImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  thumbnailAccent: {
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    opacity: 0.2,
+    transform: [{ rotate: '25deg' }],
+  },
   playOverlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   durationBadge: {
     position: 'absolute',
@@ -146,9 +234,13 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
   },
-  durationBlur: {
+  durationChip: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderRadius: borderRadius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   durationText: {
     ...typography.caption2,
@@ -159,38 +251,90 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
   },
-  favoriteBlur: {
+  deleteButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+  },
+  helperChip: {
     width: 32,
     height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   info: {
-    padding: spacing.md,
+    width: '100%',
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    backgroundColor: 'rgba(5, 5, 5, 0.35)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  primaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 1.5,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  primaryChipText: {
+    ...typography.caption1,
+    color: colors.text.primary,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  secondaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 1.5,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  secondaryChipText: {
+    ...typography.caption1,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   prompt: {
     ...typography.subheadline,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
-    fontWeight: '500',
+    fontWeight: '600',
+    lineHeight: 22,
   },
-  meta: {
+  promptFullWidth: {
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
+  },
+  metaDivider: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.text.tertiary,
+    opacity: 0.6,
   },
   metaText: {
     ...typography.caption1,
     color: colors.text.tertiary,
-    textTransform: 'capitalize',
-  },
-  dot: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: colors.text.tertiary,
   },
 });

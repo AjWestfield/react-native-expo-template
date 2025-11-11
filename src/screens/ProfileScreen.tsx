@@ -1,60 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser, useAuth } from '@clerk/clerk-expo';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+import { useResponsive } from '../hooks/useResponsive';
+import {
+  createCenteredContainer,
+  getResponsiveSpacing,
+  getResponsiveFontSize,
+  getHeaderButtonSize,
+  getIconSize,
+} from '../utils/responsive';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const responsive = useResponsive();
   const { user } = useUser();
-  const { signOut, getToken } = useAuth();
+  const { signOut } = useAuth();
   const navigation = useNavigation();
-  const [credits, setCredits] = useState<number>(0);
-  const [loadingCredits, setLoadingCredits] = useState(true);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchCredits();
-    }, [])
+  // Responsive centered container style
+  const responsiveSpacing = getResponsiveSpacing(responsive);
+  const containerStyle = createCenteredContainer(
+    responsive.isDesktop || responsive.isLargeDesktop ? 'medium' : 'small',
+    responsive
   );
-
-  const fetchCredits = async () => {
-    try {
-      setLoadingCredits(true);
-      const token = await getToken();
-      if (!token) {
-        console.error('No auth token available');
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/api/credits`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCredits(data.credits || 0);
-      } else {
-        console.error('Failed to fetch credits');
-      }
-    } catch (error) {
-      console.error('Error fetching credits:', error);
-    } finally {
-      setLoadingCredits(false);
-    }
-  };
-
-  const handleBuyCredits = () => {
-    navigation.navigate('Pricing' as never);
-  };
+  const headerButtonSize = getHeaderButtonSize(responsive);
+  const headerIconSize = getIconSize(24, responsive);
+  const actionIconSize = getIconSize(20, responsive);
+  const menuIconSize = getIconSize(24, responsive);
+  const titleFontSize = getResponsiveFontSize(20, responsive);
+  const nameFontSize = getResponsiveFontSize(28, responsive);
+  const usernameFontSize = getResponsiveFontSize(16, responsive);
+  const captionFontSize = getResponsiveFontSize(14, responsive);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -80,7 +62,7 @@ export default function ProfileScreen() {
   };
 
   const handleMyVideos = () => {
-    navigation.navigate('Gallery' as never);
+    navigation.navigate('Gallery');
   };
 
   const handleSettings = () => {
@@ -106,25 +88,82 @@ export default function ProfileScreen() {
         contentContainerStyle={[
           styles.contentContainer,
           {
-            paddingTop: insets.top + spacing.md,
-            paddingBottom: insets.bottom + 100,
+            paddingTop: insets.top + responsiveSpacing.vertical,
+            paddingBottom:
+              insets.bottom + (responsive.shouldUseSidebar ? responsiveSpacing.vertical : 100),
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
+        <View style={containerStyle}>
+          {/* Header */}
+          <View
+            style={[
+              styles.header,
+              {
+                marginBottom: responsiveSpacing.gap,
+                justifyContent: responsive.shouldUseSidebar ? 'flex-start' : 'space-between',
+              },
+            ]}
+          >
+            {!responsive.shouldUseSidebar && (
+              <TouchableOpacity
+                style={[
+                  styles.headerButton,
+                  {
+                    width: headerButtonSize,
+                    height: headerButtonSize,
+                    borderRadius: headerButtonSize / 2,
+                  },
+                ]}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={headerIconSize} color={colors.text.primary} />
+              </TouchableOpacity>
+            )}
+            <Text
+              style={[
+                styles.headerTitle,
+                {
+                  fontSize: titleFontSize,
+                  textAlign: responsive.shouldUseSidebar ? 'left' : 'center',
+                  flex: responsive.shouldUseSidebar ? undefined : 1,
+                },
+              ]}
+            >
+              Profile
+            </Text>
+            {!responsive.shouldUseSidebar && (
+              <TouchableOpacity
+                style={[
+                  styles.headerButton,
+                  {
+                    width: headerButtonSize,
+                    height: headerButtonSize,
+                    borderRadius: headerButtonSize / 2,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="ellipsis-vertical"
+                  size={headerIconSize}
+                  color={colors.text.primary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
 
         {/* Profile Section */}
-        <View style={styles.profileSection}>
+        <View
+          style={[
+            styles.profileSection,
+            {
+              marginBottom: responsiveSpacing.gap,
+              alignItems:
+                responsive.isDesktop || responsive.isLargeDesktop ? 'flex-start' : 'center',
+            },
+          ]}
+        >
           {/* Avatar with Badge */}
           <View style={styles.avatarContainer}>
             <LinearGradient
@@ -139,97 +178,92 @@ export default function ProfileScreen() {
           </View>
 
           {/* User Info */}
-          <Text style={styles.userName}>
+          <Text
+            style={[
+              styles.userName,
+              {
+                fontSize: nameFontSize,
+                textAlign: responsive.isDesktop || responsive.isLargeDesktop ? 'left' : 'center',
+              },
+            ]}
+          >
             {user?.fullName || user?.firstName || 'User'}
           </Text>
-          <Text style={styles.username}>
+          <Text
+            style={[
+              styles.username,
+              {
+                fontSize: usernameFontSize,
+                textAlign: responsive.isDesktop || responsive.isLargeDesktop ? 'left' : 'center',
+              },
+            ]}
+          >
             @{user?.username || 'username'}
           </Text>
-          <Text style={styles.joinedDate}>
+          <Text
+            style={[
+              styles.joinedDate,
+              {
+                fontSize: captionFontSize,
+                textAlign: responsive.isDesktop || responsive.isLargeDesktop ? 'left' : 'center',
+              },
+            ]}
+          >
             Joined {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
         </View>
 
         {/* Action Buttons */}
-        <View style={styles.actionButtons}>
+        <View
+          style={[
+            styles.actionButtons,
+            { marginBottom: responsiveSpacing.gap, gap: responsiveSpacing.gap },
+          ]}
+        >
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleEditProfile}
           >
-            <Ionicons name="create-outline" size={20} color={colors.text.primary} />
+            <Ionicons name="create-outline" size={actionIconSize} color={colors.text.primary} />
             <Text style={styles.actionButtonText}>Edit Profile</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleShare}
           >
-            <Ionicons name="share-outline" size={20} color={colors.text.primary} />
+            <Ionicons name="share-outline" size={actionIconSize} color={colors.text.primary} />
             <Text style={styles.actionButtonText}>Share</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Credits Card */}
-        <View style={styles.section}>
-          <GlassCard style={styles.creditsCard}>
-            <LinearGradient
-              colors={['#667EEA', '#764BA2']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.creditsGradient}
-            >
-              <View style={styles.creditsHeader}>
-                <Ionicons name="diamond" size={32} color="#FFFFFF" />
-                <Text style={styles.creditsTitle}>Your Credits</Text>
-              </View>
-
-              {loadingCredits ? (
-                <ActivityIndicator size="large" color="#FFFFFF" style={styles.creditsLoader} />
-              ) : (
-                <View style={styles.creditsContent}>
-                  <Text style={styles.creditsAmount}>{credits.toLocaleString()}</Text>
-                  <Text style={styles.creditsLabel}>Available Credits</Text>
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={styles.buyCreditsButton}
-                onPress={handleBuyCredits}
-              >
-                <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-                <Text style={styles.buyCreditsText}>Buy More Credits</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </GlassCard>
-        </View>
-
         {/* My Videos Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: responsiveSpacing.gap }]}>
           <GlassCard style={styles.menuCard}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={handleMyVideos}
             >
               <View style={styles.menuIconContainer}>
-                <Ionicons name="videocam" size={24} color={colors.text.primary} />
+                <Ionicons name="videocam" size={menuIconSize} color={colors.text.primary} />
               </View>
               <Text style={styles.menuText}>My Videos</Text>
-              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+              <Ionicons name="chevron-forward" size={menuIconSize} color={colors.text.tertiary} />
             </TouchableOpacity>
           </GlassCard>
         </View>
 
         {/* Settings Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: responsiveSpacing.gap }]}>
           <GlassCard style={styles.menuCard}>
             <TouchableOpacity
               style={[styles.menuItem, styles.menuItemBorder]}
               onPress={handleSettings}
             >
               <View style={styles.menuIconContainer}>
-                <Ionicons name="settings-outline" size={24} color={colors.text.primary} />
+                <Ionicons name="settings-outline" size={menuIconSize} color={colors.text.primary} />
               </View>
               <Text style={styles.menuText}>Settings</Text>
-              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+              <Ionicons name="chevron-forward" size={menuIconSize} color={colors.text.tertiary} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -237,10 +271,14 @@ export default function ProfileScreen() {
               onPress={handleHelp}
             >
               <View style={styles.menuIconContainer}>
-                <Ionicons name="help-circle-outline" size={24} color={colors.text.primary} />
+                <Ionicons
+                  name="help-circle-outline"
+                  size={menuIconSize}
+                  color={colors.text.primary}
+                />
               </View>
               <Text style={styles.menuText}>Help & Support</Text>
-              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+              <Ionicons name="chevron-forward" size={menuIconSize} color={colors.text.tertiary} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -248,23 +286,24 @@ export default function ProfileScreen() {
               onPress={handlePrivacy}
             >
               <View style={styles.menuIconContainer}>
-                <Ionicons name="shield-outline" size={24} color={colors.text.primary} />
+                <Ionicons name="shield-outline" size={menuIconSize} color={colors.text.primary} />
               </View>
               <Text style={styles.menuText}>Privacy</Text>
-              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+              <Ionicons name="chevron-forward" size={menuIconSize} color={colors.text.tertiary} />
             </TouchableOpacity>
           </GlassCard>
         </View>
 
         {/* Sign Out Button */}
-        <View style={styles.section}>
+        <View style={[styles.section, { marginBottom: responsiveSpacing.vertical }]}>
           <TouchableOpacity
             style={styles.signOutButton}
             onPress={handleSignOut}
           >
-            <Ionicons name="log-out-outline" size={20} color="#FF4444" />
+            <Ionicons name="log-out-outline" size={actionIconSize} color="#FF4444" />
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
+        </View>
         </View>
       </ScrollView>
     </View>
@@ -280,14 +319,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: spacing.lg,
+    flexGrow: 1,
+    alignItems: 'center',
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    width: '100%',
   },
   headerButton: {
     width: 44,
@@ -304,8 +344,7 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    width: '100%',
   },
   avatarContainer: {
     position: 'relative',
@@ -348,9 +387,8 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
+    width: '100%',
     gap: spacing.md,
-    marginBottom: spacing.xl,
   },
   actionButton: {
     flex: 1,
@@ -370,8 +408,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   section: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    width: '100%',
   },
   menuCard: {
     padding: 0,
@@ -416,57 +453,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FF4444',
-  },
-  creditsCard: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  creditsGradient: {
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
-  },
-  creditsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  creditsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  creditsContent: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  creditsAmount: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: spacing.xs,
-  },
-  creditsLabel: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  creditsLoader: {
-    marginVertical: spacing.xl,
-  },
-  buyCreditsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  buyCreditsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });

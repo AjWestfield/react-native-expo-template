@@ -1,0 +1,17 @@
+{
+  "name": "supabase",
+  "claims": {
+    "aud": "authenticated",
+    "email": "{{user.email}}",
+    "app_metadata": {
+      "provider": "clerk"
+    },
+    "user_metadata": {
+      "email": "{{user.email}}",
+      "email_verified": "{{user.email_verified}}"
+    }
+  },
+  "lifetime": 3600,
+  "signing_algorithm": "HS256",
+  "signing_key": "GLIKrvVMYDhVweKvaXUu3NAJ/uvzI5AGgElnB/yHKJdkDXfQT3OB1BdFeV5uARU4fxTREThMXfsuv/n2FYNWPg=="
+}

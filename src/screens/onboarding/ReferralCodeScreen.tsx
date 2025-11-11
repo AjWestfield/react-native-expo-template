@@ -1,22 +1,15 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { GlassButton, GlassInput } from '../../components';
-import { colors, typography, spacing } from '../../theme/colors';
+import { GlassButton, GlassInput, OnboardingLayout } from '../../components';
+import { colors, typography, spacing, borderRadius } from '../../theme/colors';
 import { OnboardingNavigatorParamList } from '../../types/onboarding';
+import { useResponsive } from '../../hooks/useResponsive';
+import { getResponsiveSpacing, getResponsiveFontSize } from '../../utils/responsive';
 
 type ReferralCodeScreenProps = {
-  navigation: NativeStackNavigationProp<
-    OnboardingNavigatorParamList,
-    'ReferralCode'
-  >;
+  navigation: NativeStackNavigationProp<OnboardingNavigatorParamList, 'ReferralCode'>;
   route: RouteProp<OnboardingNavigatorParamList, 'ReferralCode'>;
 };
 
@@ -27,9 +20,10 @@ export const ReferralCodeScreen: React.FC<ReferralCodeScreenProps> = ({
   const { selectedGoals } = route.params;
   const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState('');
+  const responsive = useResponsive();
+  const responsiveSpacing = getResponsiveSpacing(responsive);
 
   const handleApply = () => {
-    // Simple validation - you can add your own logic here
     if (referralCode.trim().length > 0 && referralCode.trim().length < 4) {
       setError('Referral code must be at least 4 characters');
       return;
@@ -49,87 +43,84 @@ export const ReferralCodeScreen: React.FC<ReferralCodeScreenProps> = ({
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Referral Code</Text>
-          <Text style={styles.subtitle}>
-            Have a referral code? Enter it below or continue to skip
-          </Text>
-        </View>
-
-        {/* Input */}
-        <View style={styles.inputContainer}>
-          <GlassInput
-            label="Enter referral code"
-            value={referralCode}
-            onChangeText={(text) => {
-              setReferralCode(text);
-              setError('');
-            }}
-            error={error}
-            placeholder="Enter code"
-            autoCapitalize="characters"
-          />
-        </View>
-
-        {/* Spacer */}
-        <View style={styles.spacer} />
-
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <GlassButton
-            title="Apply"
-            onPress={handleApply}
-            variant="primary"
-            size="large"
-            disabled={referralCode.trim().length === 0}
-            style={styles.applyButton}
-          />
-
-          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        </View>
+    <OnboardingLayout
+      contentWidth="small"
+      style={[styles.panel, { padding: responsiveSpacing.vertical }]}
+    >
+      <View style={styles.header}>
+        <Text style={[styles.title, { fontSize: getResponsiveFontSize(28, responsive) }]}>
+          Referral Code
+        </Text>
+        <Text style={[styles.subtitle, { fontSize: getResponsiveFontSize(16, responsive) }]}>
+          Have a referral code? Enter it below or continue to skip
+        </Text>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.inputContainer}>
+        <GlassInput
+          label="Enter referral code"
+          value={referralCode}
+          onChangeText={(text) => {
+            setReferralCode(text);
+            setError('');
+          }}
+          error={error}
+          placeholder="Enter code"
+          autoCapitalize="characters"
+        />
+      </View>
+
+      <View style={styles.spacer} />
+
+      <View style={styles.buttonContainer}>
+        <GlassButton
+          title="Apply"
+          onPress={handleApply}
+          variant="primary"
+          size="large"
+          disabled={referralCode.trim().length === 0}
+          style={styles.applyButton}
+        />
+
+        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
+      </View>
+    </OnboardingLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.xl,
+  panel: {
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    gap: spacing.xl,
+    minHeight: 420,
   },
   header: {
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    gap: spacing.md,
   },
   title: {
     ...typography.title2,
     color: colors.text.primary,
-    marginBottom: spacing.md,
   },
   subtitle: {
     ...typography.body,
     color: colors.text.secondary,
   },
   inputContainer: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
   },
   spacer: {
     flex: 1,
   },
   buttonContainer: {
-    paddingBottom: spacing.xxxl,
+    width: '100%',
   },
   applyButton: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   skipButton: {
     paddingVertical: spacing.md,

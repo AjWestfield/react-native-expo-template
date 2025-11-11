@@ -5,11 +5,11 @@ import { colors } from '../theme/colors';
 
 export default function AddScreen() {
   const addOptions = [
-    { icon: 'camera', title: 'Take Photo', description: 'Capture a new photo', color: colors.primary },
-    { icon: 'images', title: 'Choose from Gallery', description: 'Select from your photos', color: colors.accent },
-    { icon: 'videocam', title: 'Record Video', description: 'Create a new video', color: colors.error },
-    { icon: 'document-text', title: 'Create Document', description: 'Start a new document', color: colors.success },
-    { icon: 'link', title: 'Add Link', description: 'Share a link', color: colors.warning },
+    { icon: 'camera', title: 'Take Photo', description: 'Capture a new photo', color: colors.text.primary },
+    { icon: 'images', title: 'Choose from Gallery', description: 'Select from your photos', color: colors.accent.lightGray },
+    { icon: 'videocam', title: 'Record Video', description: 'Create a new video', color: colors.status.error },
+    { icon: 'document-text', title: 'Create Document', description: 'Start a new document', color: colors.status.success },
+    { icon: 'link', title: 'Add Link', description: 'Share a link', color: colors.status.warning },
     { icon: 'musical-notes', title: 'Add Audio', description: 'Upload or record audio', color: '#ec4899' },
   ];
 
@@ -30,7 +30,7 @@ export default function AddScreen() {
               <Text style={styles.optionTitle}>{option.title}</Text>
               <Text style={styles.optionDescription}>{option.description}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.text.muted} />
+            <Ionicons name="chevron-forward" size={24} color={colors.text.quaternary} />
           </TouchableOpacity>
         ))}
       </View>
@@ -40,7 +40,7 @@ export default function AddScreen() {
         {[1, 2, 3].map((item) => (
           <View key={item} style={styles.recentCard}>
             <View style={styles.recentThumbnail}>
-              <Ionicons name="image" size={20} color={colors.text.muted} />
+              <Ionicons name="image" size={20} color={colors.text.quaternary} />
             </View>
             <View style={styles.recentContent}>
               <Text style={styles.recentTitle}>Recent Item {item}</Text>
@@ -56,7 +56,7 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.primary,
   },
   header: {
     padding: 24,
@@ -79,12 +79,12 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass.background,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glass.border,
   },
   iconContainer: {
     width: 64,
@@ -120,18 +120,18 @@ const styles = StyleSheet.create({
   recentCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass.background,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glass.border,
   },
   recentThumbnail: {
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: colors.cardHover,
+    backgroundColor: colors.glass.backgroundLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -147,6 +147,6 @@ const styles = StyleSheet.create({
   },
   recentDate: {
     fontSize: 13,
-    color: colors.text.muted,
+    color: colors.text.tertiary,
   },
 });

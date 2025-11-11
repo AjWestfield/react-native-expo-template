@@ -1,8 +1,10 @@
+import type { Ionicons } from '@expo/vector-icons';
+
 export type GoalOption = {
   id: string;
   title: string;
   description: string;
-  icon: string; // Ionicon name
+  icon: keyof typeof Ionicons.glyphMap;
 };
 
 export type OnboardingData = {

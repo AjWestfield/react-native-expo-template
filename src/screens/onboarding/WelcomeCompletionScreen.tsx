@@ -1,13 +1,10 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-} from 'react-native';
-import { GlassButton } from '../../components';
-import { colors, typography, spacing } from '../../theme/colors';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { GlassButton, OnboardingLayout } from '../../components';
+import { colors, typography, spacing, borderRadius } from '../../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { useResponsive } from '../../hooks/useResponsive';
+import { getResponsiveSpacing, getResponsiveFontSize } from '../../utils/responsive';
 
 type WelcomeCompletionScreenProps = {
   onComplete: () => void;
@@ -16,56 +13,44 @@ type WelcomeCompletionScreenProps = {
 export const WelcomeCompletionScreen: React.FC<WelcomeCompletionScreenProps> = ({
   onComplete,
 }) => {
+  const responsive = useResponsive();
+  const responsiveSpacing = getResponsiveSpacing(responsive);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Icon/Celebration */}
-        <View style={styles.iconContainer}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="checkmark" size={80} color={colors.text.primary} />
-          </View>
-        </View>
-
-        {/* Message */}
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>Welcome aboard!</Text>
-          <Text style={styles.subtitle}>
-            You're all set up and ready to create amazing videos with AI. Let's
-            make something incredible!
-          </Text>
-        </View>
-
-        {/* Spacer */}
-        <View style={styles.spacer} />
-
-        {/* CTA Button */}
-        <View style={styles.buttonContainer}>
-          <GlassButton
-            title="Explore the app"
-            onPress={onComplete}
-            variant="glow"
-            size="large"
-          />
+    <OnboardingLayout
+      contentWidth="small"
+      style={[styles.panel, { padding: responsiveSpacing.vertical * 1.25 }]}
+    >
+      <View style={styles.iconContainer}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="checkmark" size={80} color={colors.text.primary} />
         </View>
       </View>
-    </SafeAreaView>
+
+      <View style={styles.textContainer}>
+        <Text style={[styles.title, { fontSize: getResponsiveFontSize(34, responsive) }]}>Welcome aboard!</Text>
+        <Text style={[styles.subtitle, { fontSize: getResponsiveFontSize(16, responsive) }]}>
+          You're all set up and ready to create amazing videos with AI. Let's make something incredible!
+        </Text>
+      </View>
+
+      <GlassButton title="Explore the app" onPress={onComplete} variant="glow" size="large" />
+    </OnboardingLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.primary,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxxl,
+  panel: {
+    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    gap: spacing.xl,
+    alignItems: 'center',
   },
   iconContainer: {
+    width: '100%',
     alignItems: 'center',
-    marginTop: spacing.xxxl,
-    marginBottom: spacing.xxxl,
   },
   iconCircle: {
     width: 160,
@@ -84,23 +69,17 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     alignItems: 'center',
+    gap: spacing.md,
   },
   title: {
     ...typography.title1,
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: spacing.lg,
   },
   subtitle: {
     ...typography.body,
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 24,
-  },
-  spacer: {
-    flex: 1,
-  },
-  buttonContainer: {
-    paddingBottom: spacing.xxxl,
   },
 });

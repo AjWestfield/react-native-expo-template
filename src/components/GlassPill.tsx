@@ -2,6 +2,8 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { colors, typography, spacing, borderRadius, shadows } from '../theme/colors';
+import { useResponsive } from '../hooks/useResponsive';
+import { getResponsiveFontSize } from '../utils/responsive';
 
 interface GlassPillProps {
   title: string;
@@ -20,6 +22,13 @@ export const GlassPill: React.FC<GlassPillProps> = ({
   style,
   textStyle,
 }) => {
+  const responsive = useResponsive();
+
+  // Scale pill size for desktop
+  const horizontalPadding = responsive.isDesktop || responsive.isLargeDesktop ? 20 : spacing.md;
+  const verticalPadding = responsive.isDesktop || responsive.isLargeDesktop ? 12 : spacing.sm;
+  const fontSize = getResponsiveFontSize(14, responsive);
+
   return (
     <TouchableOpacity
       style={[
@@ -33,12 +42,19 @@ export const GlassPill: React.FC<GlassPillProps> = ({
       <BlurView
         intensity={active ? 40 : 20}
         tint="dark"
-        style={styles.blur}
+        style={[
+          styles.blur,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingVertical: verticalPadding,
+          },
+        ]}
       >
         {icon && <>{icon}</>}
         <Text
           style={[
             styles.text,
+            { fontSize },
             active && styles.textActive,
             textStyle,
           ]}
@@ -67,12 +83,9 @@ const styles = StyleSheet.create({
   blur: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     gap: spacing.xs,
   },
   text: {
-    ...typography.subheadline,
     color: colors.text.secondary,
     fontWeight: '500',
   },

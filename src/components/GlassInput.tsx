@@ -27,6 +27,13 @@ export const GlassInput: React.FC<GlassInputProps> = ({
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const effectiveHeight = typeof height === 'number' ? height : undefined;
+  const inputContainerHeight =
+    typeof effectiveHeight === 'number' ? { height: effectiveHeight } : undefined;
+  const textInputHeight =
+    typeof effectiveHeight === 'number'
+      ? { height: Math.max(effectiveHeight - 2, 0) }
+      : undefined;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -36,7 +43,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           styles.inputContainer,
           isFocused && styles.inputContainerFocused,
           error && styles.inputContainerError,
-          height && { height },
+          inputContainerHeight,
         ]}
       >
         <BlurView intensity={20} tint="dark" style={styles.blur}>
@@ -45,7 +52,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
             style={[
               styles.input,
               multiline && styles.inputMultiline,
-              height && { height: height - 2 },
+              textInputHeight,
             ]}
             placeholderTextColor={colors.text.tertiary}
             onFocus={() => setIsFocused(true)}

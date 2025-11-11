@@ -1,42 +1,63 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, Alert, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute, RouteProp, StackActions } from '@react-navigation/native';
+import { NavigationProp, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { colors, spacing, typography } from '../theme/colors';
-
-const { width } = Dimensions.get('window');
+import { useKieAI } from '../hooks/useKieAI';
+import { KieAIModel } from '../types/kieai';
+import { useResponsive } from '../hooks/useResponsive';
+import { kieAIService } from '../services/kieai.service';
 
 type VideoGenerationScreenRouteProp = RouteProp<
   {
     VideoGeneration: {
       prompt: string;
       image?: string | null;
+      videoUrl?: string; // For watermark removal
       model?: string;
       aspectRatio?: string;
+      duration?: string;
     };
   },
   'VideoGeneration'
 >;
 
+type RootNavigation = NavigationProp<Record<string, object | undefined>>;
+
 export default function VideoGenerationScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<RootNavigation>();
   const route = useRoute<VideoGenerationScreenRouteProp>();
+  const responsive = useResponsive();
+  const { width } = useWindowDimensions();
   const {
     prompt,
     image,
+    videoUrl: inputVideoUrl,
     model = 'Sora 2',
-    aspectRatio = 'vertical'
+    aspectRatio = 'vertical',
+    duration = '10'
   } = route.params || { prompt: 'Default prompt' };
+
+  // Constrain circle sizes for desktop
+  const maxCircleWidth = Math.min(width * 0.8, 600);
+  const outerCircleSize = Math.min(width * 0.8, 500);
+  const middleCircleSize = Math.min(width * 0.6, 375);
 
   console.log('VideoGenerationScreen mounted with:', {
     prompt,
     image: image ? 'Image attached' : 'No image',
+    inputVideoUrl: inputVideoUrl ? 'Video URL provided' : 'No video URL',
     model,
     aspectRatio
   });
+
+  // KIEAI hook
+  const { generateVideo, loading, error, videoUrl, progress, taskId } = useKieAI();
+  const [fallbackResultUrl, setFallbackResultUrl] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('Submitting request...');
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -44,7 +65,211 @@ export default function VideoGenerationScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const hasNavigatedRef = useRef(false);
+  const hasStartedRef = useRef(false);
 
+  const navigateToPreview = useCallback(
+    (url: string | null) => {
+      if (!url || hasNavigatedRef.current) {
+        return;
+      }
+
+      hasNavigatedRef.current = true;
+
+      navigation.replace('VideoPreview', {
+        videoUrl: url,
+        prompt,
+        image,
+        model,
+        aspectRatio,
+        duration,
+        shouldAutoPlay: true,
+      });
+    },
+    [navigation, prompt, image, model, aspectRatio, duration]
+  );
+
+  const extractResultUrl = useCallback((resultJson?: string | null) => {
+    if (!resultJson || typeof resultJson !== 'string') {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(resultJson);
+      const candidates = [
+        parsed.resultUrls,
+        parsed.resultUrl,
+        parsed.resultWaterMarkUrls,
+        parsed.resultWatermarkUrls,
+        parsed.resultVideoUrls,
+        parsed.resultVideoUrl,
+      ];
+
+      for (const candidate of candidates) {
+        if (!candidate) {
+          continue;
+        }
+
+        if (Array.isArray(candidate)) {
+          const urlCandidate = candidate.find((value) => typeof value === 'string' && value.startsWith('http'));
+          if (urlCandidate) {
+            return urlCandidate;
+          }
+        } else if (typeof candidate === 'string' && candidate.startsWith('http')) {
+          return candidate;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse resultJson', error);
+    }
+
+    return null;
+  }, []);
+
+  // Start video generation on mount (guarded against React 18 double-invoke)
+  useEffect(() => {
+    if (hasStartedRef.current) {
+      return;
+    }
+    hasStartedRef.current = true;
+
+    let isMounted = true;
+
+    const startGeneration = async () => {
+      try {
+        setStatusMessage('Preparing your request...');
+
+        if (model === 'Watermark Remover' && inputVideoUrl) {
+          console.log('Starting watermark removal with:', {
+            model,
+            inputVideoUrl,
+          });
+
+          const generatedUrl = await generateVideo({
+            prompt,
+            model: model as KieAIModel,
+            videoUrl: inputVideoUrl,
+          });
+
+          if (isMounted) {
+            navigateToPreview(generatedUrl);
+          }
+        } else {
+          const videoAspectRatio = aspectRatio === 'vertical' ? '9:16' : '16:9';
+          const imageUrls = image ? [image] : undefined;
+
+          console.log('Starting video generation with:', {
+            model,
+            prompt,
+            aspectRatio: videoAspectRatio,
+            duration,
+            hasImage: !!imageUrls
+          });
+
+          const generatedUrl = await generateVideo({
+            prompt,
+            model: model as KieAIModel,
+            imageUrls,
+            aspectRatio: videoAspectRatio,
+            duration: duration as '10' | '15' | '8',
+          });
+
+          if (isMounted) {
+            navigateToPreview(generatedUrl);
+          }
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate video';
+        console.error('Video generation error:', errorMessage);
+
+        Alert.alert(
+          'Generation Failed',
+          errorMessage,
+          [
+            {
+              text: 'Go Back',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }
+    };
+
+    startGeneration();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigateToPreview, aspectRatio, duration, generateVideo, image, inputVideoUrl, model, prompt]);
+
+  // Update status message based on progress
+  useEffect(() => {
+    switch (progress) {
+      case 'idle':
+        setStatusMessage('Preparing your request...');
+        break;
+      case 'submitting':
+        setStatusMessage('Submitting request...');
+        break;
+      case 'queueing':
+        setStatusMessage('Request queued...');
+        break;
+      case 'wait':
+        setStatusMessage('Waiting in queue...');
+        break;
+      case 'generating':
+        setStatusMessage('Generating your video...');
+        break;
+      case 'success':
+        setStatusMessage('Video ready!');
+        break;
+      case 'fail':
+        setStatusMessage('Generation failed');
+        break;
+    }
+  }, [progress]);
+
+  // Navigate once we have any video URL (primary or fallback)
+  useEffect(() => {
+    const resolvedUrl = videoUrl || fallbackResultUrl;
+    if (resolvedUrl) {
+      console.log('Video ready, navigating to preview:', resolvedUrl);
+      navigateToPreview(resolvedUrl);
+    }
+  }, [videoUrl, fallbackResultUrl, navigateToPreview]);
+
+  // Fallback: if we know the task succeeded but hook didn't yield a URL yet, fetch directly
+  useEffect(() => {
+    if (hasNavigatedRef.current) {
+      return;
+    }
+
+    if (progress !== 'success' || !taskId || fallbackResultUrl || videoUrl) {
+      return;
+    }
+
+    let isActive = true;
+
+    const fetchResult = async () => {
+      try {
+        const status = await kieAIService.getSoraTaskStatus(taskId);
+        const parsedUrl = extractResultUrl(status?.data?.resultJson);
+
+        if (parsedUrl && isActive) {
+          setFallbackResultUrl(parsedUrl);
+        }
+      } catch (error) {
+        console.error('Fallback task status fetch failed:', error);
+      }
+    };
+
+    fetchResult();
+
+    return () => {
+      isActive = false;
+    };
+  }, [progress, taskId, fallbackResultUrl, videoUrl, extractResultUrl]);
+
+  // UI Animations
   useEffect(() => {
     // Fade in animation
     Animated.timing(fadeAnim, {
@@ -78,42 +303,31 @@ export default function VideoGenerationScreen() {
       })
     ).start();
 
-    // Progress bar animation (simulates 0-100% over 8 seconds)
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: 8000,
-      useNativeDriver: false,
-    }).start();
-
-    // Navigate to preview screen after 8 seconds
-    const timer = setTimeout(() => {
-      if (hasNavigatedRef.current) {
-        return;
-      }
-
-      hasNavigatedRef.current = true;
-      console.log('Attempting to navigate to VideoPreview with all params');
-      try {
-        navigation.dispatch(
-          StackActions.replace('VideoPreview' as never, {
-            prompt,
-            image,
-            model,
-            aspectRatio
-          } as never)
-        );
-        console.log('Navigation successful');
-      } catch (error) {
-        console.error('Navigation error:', error);
-        hasNavigatedRef.current = false;
-      }
-    }, 8000);
-
-    return () => {
-      clearTimeout(timer);
-      hasNavigatedRef.current = false;
-    };
-  }, [navigation, prompt]);
+    // Progress bar animation (simulates progress while generating)
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(progressAnim, {
+            toValue: 0.9,
+            duration: 30000, // 30 seconds to reach 90%
+            useNativeDriver: false,
+          }),
+          Animated.timing(progressAnim, {
+            toValue: 0.9,
+            duration: 30000, // Hold at 90%
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    } else if (videoUrl) {
+      // Complete the progress bar when done
+      Animated.timing(progressAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [loading, videoUrl]);
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -138,6 +352,9 @@ export default function VideoGenerationScreen() {
           style={[
             styles.outerCircle,
             {
+              width: outerCircleSize,
+              height: outerCircleSize,
+              borderRadius: outerCircleSize / 2,
               transform: [{ rotate: spin }, { scale: pulseAnim }],
             },
           ]}
@@ -152,6 +369,9 @@ export default function VideoGenerationScreen() {
           style={[
             styles.middleCircle,
             {
+              width: middleCircleSize,
+              height: middleCircleSize,
+              borderRadius: middleCircleSize / 2,
               transform: [
                 { rotate: spin },
                 { scale: Animated.multiply(pulseAnim, 0.9) },
@@ -184,17 +404,25 @@ export default function VideoGenerationScreen() {
 
         {/* Status text */}
         <View style={styles.textContainer}>
-          <Text style={styles.statusText}>Generating Your Video</Text>
+          <Text style={styles.statusText}>{statusMessage}</Text>
           <Text style={styles.promptText} numberOfLines={2}>
             {prompt}
           </Text>
           <View style={styles.metadataContainer}>
             <Text style={styles.metadataText}>
-              Model: {model} • Aspect Ratio: {aspectRatio === 'vertical' ? '9:16' : '16:9'}
-              {image && ' • Image-to-Video'}
+              {model === 'Watermark Remover'
+                ? 'Removing Sora watermark...'
+                : `Model: ${model} • Aspect Ratio: ${aspectRatio === 'vertical' ? '9:16' : '16:9'}${image ? ' • Image-to-Video' : ''}`
+              }
             </Text>
           </View>
-          <Text style={styles.subText}>This may take a few moments...</Text>
+          {error ? (
+            <Text style={[styles.subText, { color: '#FF6B6B' }]}>{error}</Text>
+          ) : (
+            <Text style={styles.subText}>
+              {progress === 'generating' ? 'AI is crafting your video...' : 'This may take a few moments...'}
+            </Text>
+          )}
         </View>
 
         {/* Progress bar */}
@@ -268,16 +496,10 @@ const styles = StyleSheet.create({
   },
   outerCircle: {
     position: 'absolute',
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: (width * 0.8) / 2,
     overflow: 'hidden',
   },
   middleCircle: {
     position: 'absolute',
-    width: width * 0.6,
-    height: width * 0.6,
-    borderRadius: (width * 0.6) / 2,
     overflow: 'hidden',
   },
   gradientCircle: {

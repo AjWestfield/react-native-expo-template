@@ -16,6 +16,15 @@ export const darkTheme = {
 };
 
 export const colors = {
+  primary: '#FFFFFF',
+  secondary: '#A0A0A0',
+  card: 'rgba(255, 255, 255, 0.05)',
+  cardHover: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.1)',
+  error: '#999999',
+  success: '#FFFFFF',
+  warning: '#CCCCCC',
+
   // Background colors
   background: {
     primary: '#000000',      // Pure black
@@ -55,6 +64,8 @@ export const colors = {
     lightGray: '#CCCCCC',
     mediumGray: '#999999',
     darkGray: '#333333',
+    primary: '#FFFFFF',
+    secondary: '#CCCCCC',
   },
 
   // Gradient colors for liquid glass effect

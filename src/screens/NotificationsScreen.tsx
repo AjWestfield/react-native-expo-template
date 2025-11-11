@@ -8,7 +8,7 @@ export default function NotificationsScreen() {
     {
       id: 1,
       icon: 'heart',
-      iconColor: colors.error,
+      iconColor: colors.status.error,
       title: 'New like on your post',
       description: 'John Smith liked your recent post',
       time: '5m ago',
@@ -17,7 +17,7 @@ export default function NotificationsScreen() {
     {
       id: 2,
       icon: 'person-add',
-      iconColor: colors.primary,
+      iconColor: colors.text.primary,
       title: 'New follower',
       description: 'Sarah Johnson started following you',
       time: '1h ago',
@@ -26,7 +26,7 @@ export default function NotificationsScreen() {
     {
       id: 3,
       icon: 'chatbubble',
-      iconColor: colors.accent,
+      iconColor: colors.accent.lightGray,
       title: 'New comment',
       description: 'Mike Davis commented on your post',
       time: '2h ago',
@@ -35,7 +35,7 @@ export default function NotificationsScreen() {
     {
       id: 4,
       icon: 'trophy',
-      iconColor: colors.warning,
+      iconColor: colors.status.warning,
       title: 'Achievement unlocked',
       description: 'You reached 1000 followers!',
       time: '1d ago',
@@ -44,7 +44,7 @@ export default function NotificationsScreen() {
     {
       id: 5,
       icon: 'mail',
-      iconColor: colors.success,
+      iconColor: colors.status.success,
       title: 'New message',
       description: 'Emma Wilson sent you a message',
       time: '2d ago',
@@ -83,7 +83,7 @@ export default function NotificationsScreen() {
         ))}
 
         <View style={styles.emptyState}>
-          <Ionicons name="checkmark-circle-outline" size={48} color={colors.text.muted} />
+          <Ionicons name="checkmark-circle-outline" size={48} color={colors.text.tertiary} />
           <Text style={styles.emptyStateText}>You're all caught up!</Text>
         </View>
       </ScrollView>
@@ -94,7 +94,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.primary,
   },
   header: {
     flexDirection: 'row',
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   markAllRead: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: colors.text.primary,
   },
   scrollView: {
     flex: 1,
@@ -119,16 +119,16 @@ const styles = StyleSheet.create({
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: colors.glass.background,
     marginHorizontal: 24,
     marginBottom: 12,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glass.border,
   },
   notificationCardUnread: {
-    borderColor: colors.primary + '40',
+    borderColor: `${colors.text.primary}40`,
   },
   iconContainer: {
     width: 48,
@@ -154,13 +154,13 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     fontSize: 12,
-    color: colors.text.muted,
+    color: colors.text.tertiary,
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.text.primary,
     marginLeft: 8,
   },
   emptyState: {
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: colors.text.muted,
+    color: colors.text.tertiary,
     marginTop: 16,
   },
 });
