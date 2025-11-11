@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useUser();
+  const { signOut } = useAuth();
   const settingsItems = [
     {
       icon: 'videocam-outline',
@@ -45,10 +48,31 @@ export default function ProfileScreen() {
       subtitle: 'App information',
       value: null,
     },
+    {
+      icon: 'log-out-outline',
+      title: 'Sign Out',
+      subtitle: 'Sign out of your account',
+      value: null,
+    },
   ];
 
   const handleSettingPress = (title: string) => {
-    Alert.alert(title, 'This setting would open in a full app');
+    if (title === 'Sign Out') {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: () => signOut(),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(title, 'This setting would open in a full app');
+    }
   };
 
   return (
@@ -84,8 +108,12 @@ export default function ProfileScreen() {
                 <Ionicons name="person" size={40} color={colors.text.primary} />
               </LinearGradient>
             </View>
-            <Text style={styles.userName}>Creative Studio</Text>
-            <Text style={styles.userEmail}>studio@example.com</Text>
+            <Text style={styles.userName}>
+              {user?.fullName || user?.firstName || 'User'}
+            </Text>
+            <Text style={styles.userEmail}>
+              {user?.primaryEmailAddress?.emailAddress || 'No email'}
+            </Text>
           </GlassCard>
         </View>
 
