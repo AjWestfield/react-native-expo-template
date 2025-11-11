@@ -4,3 +4,7 @@ export { GlassInput } from './GlassInput';
 export { GlassPill } from './GlassPill';
 export { ProgressGlass } from './ProgressGlass';
 export { VideoCard } from './VideoCard';
+export { SelectableGlassCard } from './SelectableGlassCard';
+export { BenefitItem } from './BenefitItem';
+export { NotificationMockup } from './NotificationMockup';
+export { GoogleIcon } from './GoogleIcon';

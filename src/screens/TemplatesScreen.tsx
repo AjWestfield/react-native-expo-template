@@ -1,219 +1,355 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  Dimensions,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
-import { GlassCard } from '../components';
+import { GlassPill } from '../components';
+import { colors, spacing, borderRadius } from '../theme/colors';
+
+const { width } = Dimensions.get('window');
+const cardWidth = (width - spacing.lg * 3) / 2;
+
+type FilterType = 'all' | 'trending' | 'tiktok' | 'instagram';
+type PlatformType = 'tiktok' | 'instagram' | 'youtube' | null;
 
 interface Template {
   id: string;
   name: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  views: string;
+  platform?: PlatformType;
   gradient: string[];
+  category: FilterType[];
+  special?: boolean;
 }
 
 const templates: Template[] = [
   {
-    id: 'ring-camera',
-    name: 'Ring Camera',
-    description: 'Doorbell security camera footage style',
-    icon: 'videocam',
-    gradient: ['rgba(59, 130, 246, 0.3)', 'rgba(147, 51, 234, 0.3)'],
+    id: '1',
+    name: 'Text Reveal',
+    description: 'Animated text overlay',
+    views: '2.3M',
+    platform: 'tiktok',
+    gradient: ['#8B4513', '#D2691E'],
+    category: ['all', 'trending', 'tiktok'],
   },
   {
-    id: 'security-camera',
-    name: 'Security Camera',
-    description: 'CCTV surveillance camera aesthetic',
-    icon: 'eye',
-    gradient: ['rgba(239, 68, 68, 0.3)', 'rgba(251, 146, 60, 0.3)'],
+    id: '2',
+    name: 'Split Screen',
+    description: 'Dual video layout',
+    views: '1.8M',
+    platform: 'instagram',
+    gradient: ['#1a1a1a', '#2d2d2d'],
+    category: ['all', 'instagram'],
   },
   {
-    id: 'smartphone',
-    name: 'Smartphone',
-    description: 'Mobile phone recording style',
-    icon: 'phone-portrait',
-    gradient: ['rgba(34, 197, 94, 0.3)', 'rgba(59, 130, 246, 0.3)'],
+    id: '3',
+    name: 'Countdown',
+    description: 'Timer animation',
+    views: '945K',
+    platform: 'tiktok',
+    gradient: ['#2d2d2d', '#1a1a1a'],
+    category: ['all', 'tiktok'],
   },
   {
-    id: 'body-cam',
-    name: 'Body Camera',
-    description: 'Police body camera footage',
-    icon: 'body',
-    gradient: ['rgba(168, 85, 247, 0.3)', 'rgba(236, 72, 153, 0.3)'],
+    id: '4',
+    name: 'Zoom Effect',
+    description: 'Dynamic scaling',
+    views: '1.2M',
+    platform: 'instagram',
+    gradient: ['#4a3f3f', '#2d2d2d'],
+    category: ['all', 'trending', 'instagram'],
   },
   {
-    id: 'drone',
-    name: 'Drone',
-    description: 'Aerial drone footage perspective',
-    icon: 'airplane',
-    gradient: ['rgba(14, 165, 233, 0.3)', 'rgba(6, 182, 212, 0.3)'],
+    id: '5',
+    name: 'Glitch',
+    description: 'Digital distortion',
+    views: '756K',
+    platform: 'tiktok',
+    gradient: ['#1a1a1a', '#0d0d0d'],
+    category: ['all', 'tiktok'],
   },
   {
-    id: 'dashcam',
-    name: 'Dash Camera',
-    description: 'Vehicle dashboard camera view',
-    icon: 'car',
-    gradient: ['rgba(245, 158, 11, 0.3)', 'rgba(239, 68, 68, 0.3)'],
+    id: '6',
+    name: 'Neon Frame',
+    description: 'Glowing borders',
+    views: '1.5M',
+    platform: 'tiktok',
+    gradient: ['#0a192f', '#1a2332'],
+    category: ['all', 'tiktok'],
+    special: true,
   },
+  {
+    id: '7',
+    name: 'Particles',
+    description: 'Floating elements',
+    views: '623K',
+    platform: 'instagram',
+    gradient: ['#0f2027', '#203a43'],
+    category: ['all', 'instagram'],
+  },
+  {
+    id: '8',
+    name: 'Motion Blur',
+    description: 'Speed effect',
+    views: '892K',
+    platform: 'tiktok',
+    gradient: ['#434343', '#000000'],
+    category: ['all', 'trending', 'tiktok'],
+  },
+];
+
+const FILTERS = [
+  { label: 'All', value: 'all' as FilterType, icon: null, iconType: null },
+  { label: 'Trending', value: 'trending' as FilterType, icon: '🔥', iconType: 'emoji' as const },
+  { label: 'TikTok', value: 'tiktok' as FilterType, icon: 'logo-tiktok', iconType: 'ionicon' as const },
+  { label: 'Instagram', value: 'instagram' as FilterType, icon: 'logo-instagram', iconType: 'ionicon' as const },
 ];
 
 export default function TemplatesScreen() {
   const insets = useSafeAreaInsets();
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
+
+  const filteredTemplates = templates.filter((template) =>
+    template.category.includes(selectedFilter)
+  );
 
   const handleTemplatePress = (template: Template) => {
     console.log('Selected template:', template.name);
-    // TODO: Navigate to generation screen with selected template
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary]}
+        colors={['#000000', '#0A0A0A', '#000000']}
         style={StyleSheet.absoluteFillObject}
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 10) }]}>
-        <Text style={styles.title}>Video Templates</Text>
-        <Text style={styles.subtitle}>Choose your camera style</Text>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <TouchableOpacity style={styles.headerButton}>
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Templates</Text>
+          <Text style={styles.headerSubtitle}>Viral video styles</Text>
+        </View>
+        <TouchableOpacity style={styles.headerButton}>
+          <Ionicons name="search" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter Tabs */}
+      <View style={styles.filtersWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContainer}
+        >
+          {FILTERS.map((filter) => {
+            const renderIcon = () => {
+              if (!filter.icon) return undefined;
+
+              if (filter.iconType === 'emoji') {
+                return <Text style={styles.filterEmoji}>{filter.icon}</Text>;
+              }
+
+              if (filter.iconType === 'ionicon') {
+                return (
+                  <Ionicons
+                    name={filter.icon as any}
+                    size={16}
+                    color={selectedFilter === filter.value ? colors.text.primary : colors.text.secondary}
+                  />
+                );
+              }
+
+              return undefined;
+            };
+
+            return (
+              <GlassPill
+                key={filter.value}
+                title={filter.label}
+                active={selectedFilter === filter.value}
+                onPress={() => setSelectedFilter(filter.value)}
+                icon={renderIcon()}
+              />
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Templates Grid */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: 100 + Math.max(insets.bottom, 10) }
-        ]}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 100,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        {templates.map((template) => (
-          <TouchableOpacity
-            key={template.id}
-            activeOpacity={0.7}
-            onPress={() => handleTemplatePress(template)}
-          >
-            <GlassCard style={styles.templateCard}>
+        <View style={styles.grid}>
+          {filteredTemplates.map((template) => (
+            <TouchableOpacity
+              key={template.id}
+              style={styles.templateCard}
+              onPress={() => handleTemplatePress(template)}
+              activeOpacity={0.8}
+            >
               <LinearGradient
                 colors={template.gradient}
-                style={styles.iconContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                style={[
+                  styles.templatePreview,
+                  template.special && styles.specialPreview,
+                ]}
               >
-                <Ionicons
-                  name={template.icon}
-                  size={32}
-                  color={colors.text.primary}
-                />
+                {template.platform && (
+                  <View style={styles.platformLogo}>
+                    <Ionicons
+                      name={
+                        template.platform === 'tiktok'
+                          ? 'logo-tiktok'
+                          : template.platform === 'instagram'
+                          ? 'logo-instagram'
+                          : 'logo-youtube'
+                      }
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                )}
+                <View style={styles.viewCount}>
+                  <Ionicons name="play" size={12} color="#FFFFFF" />
+                  <Text style={styles.viewCountText}>{template.views}</Text>
+                </View>
               </LinearGradient>
-
               <View style={styles.templateInfo}>
                 <Text style={styles.templateName}>{template.name}</Text>
                 <Text style={styles.templateDescription}>
                   {template.description}
                 </Text>
               </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.tertiary}
-              />
-            </GlassCard>
-          </TouchableOpacity>
-        ))}
-
-        {/* Coming Soon Card */}
-        <GlassCard style={[styles.templateCard, styles.comingSoonCard]}>
-          <View style={[styles.iconContainer, styles.comingSoonIcon]}>
-            <Ionicons
-              name="add-circle-outline"
-              size={32}
-              color={colors.text.tertiary}
-            />
-          </View>
-
-          <View style={styles.templateInfo}>
-            <Text style={[styles.templateName, styles.comingSoonText]}>
-              More Templates
-            </Text>
-            <Text style={styles.templateDescription}>
-              Coming soon...
-            </Text>
-          </View>
-        </GlassCard>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background.primary,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  title: {
-    fontSize: 34,
-    fontWeight: 'bold',
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
+  headerSubtitle: {
+    fontSize: 14,
     color: colors.text.secondary,
+  },
+  filtersWrapper: {
+    marginBottom: spacing.md,
+  },
+  filtersContainer: {
+    paddingHorizontal: spacing.lg,
+  },
+  filterEmoji: {
+    fontSize: 14,
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 24,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   templateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 16,
+    width: cardWidth,
+    marginBottom: spacing.md,
   },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
+  templatePreview: {
+    width: '100%',
+    height: cardWidth * 1.4,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.sm,
+    position: 'relative',
+    padding: spacing.md,
+  },
+  specialPreview: {
+    borderWidth: 2,
+    borderColor: '#00FFFF',
+  },
+  platformLogo: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+  },
+  viewCount: {
+    position: 'absolute',
+    bottom: spacing.md,
+    left: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+  },
+  viewCountText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   templateInfo: {
-    flex: 1,
+    paddingHorizontal: spacing.xs,
   },
   templateName: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   templateDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.text.secondary,
-  },
-  comingSoonCard: {
-    opacity: 0.6,
-  },
-  comingSoonIcon: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  comingSoonText: {
-    color: colors.text.tertiary,
   },
 });

@@ -3,316 +3,348 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  ActivityIndicator,
+  Linking,
+  Modal,
+  TextInput,
+  Pressable,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useSignIn, useOAuth } from '@clerk/clerk-expo';
+import { useOAuth, useSignIn } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
-import { colors } from '../theme/colors';
-import { GlassCard, GlassButton } from '../components';
+import { colors, typography } from '../theme/colors';
+import { GlassButton, GoogleIcon } from '../components';
 
 WebBrowser.maybeCompleteAuthSession();
 
+type Provider = 'google' | 'apple';
+
+const TERMS_URL = 'https://example.com/terms';
+const PRIVACY_URL = 'https://example.com/privacy';
+
 export default function SignInScreen() {
-  const insets = useSafeAreaInsets();
-  const { signIn, setActive, isLoaded } = useSignIn();
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: 'oauth_google' });
   const { startOAuthFlow: startAppleOAuth } = useOAuth({ strategy: 'oauth_apple' });
+  const { signIn, setActive, isLoaded } = useSignIn();
 
+  const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const [oauthError, setOauthError] = useState('');
+  const [showEmailSheet, setShowEmailSheet] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
 
-  const onSignInPress = async () => {
+  const handleOAuth = async (provider: Provider) => {
+    try {
+      setLoadingProvider(provider);
+      setOauthError('');
+
+      const start = provider === 'google' ? startGoogleOAuth : startAppleOAuth;
+      const { createdSessionId, setActive: setActiveOAuth } = await start();
+
+      if (createdSessionId) {
+        await setActiveOAuth?.({ session: createdSessionId });
+      }
+    } catch (err: any) {
+      setOauthError(err.errors?.[0]?.message || 'Sign in failed');
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
+  const handleEmailSubmit = async () => {
     if (!isLoaded) return;
 
-    setLoading(true);
-    setError('');
-
     try {
+      setEmailLoading(true);
+      setEmailError('');
+
       const completeSignIn = await signIn.create({
-        identifier: email,
+        identifier: email.trim(),
         password,
       });
 
       await setActive({ session: completeSignIn.createdSessionId });
+      closeEmailSheet();
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Sign in failed');
+      setEmailError(err.errors?.[0]?.message || 'Sign in failed');
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
-  const onGoogleSignIn = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const { createdSessionId, setActive: setActiveOAuth } = await startGoogleOAuth();
-
-      if (createdSessionId) {
-        await setActiveOAuth?.({ session: createdSessionId });
-      }
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Google sign in failed');
-    } finally {
-      setLoading(false);
-    }
+  const closeEmailSheet = () => {
+    setShowEmailSheet(false);
+    setEmail('');
+    setPassword('');
+    setEmailError('');
+    setEmailLoading(false);
   };
 
-  const onAppleSignIn = async () => {
+  const openLink = async (url: string) => {
     try {
-      setLoading(true);
-      setError('');
-
-      const { createdSessionId, setActive: setActiveOAuth } = await startAppleOAuth();
-
-      if (createdSessionId) {
-        await setActiveOAuth?.({ session: createdSessionId });
-      }
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Apple sign in failed');
-    } finally {
-      setLoading(false);
+      await Linking.openURL(url);
+    } catch {
+      // ignore
     }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <LinearGradient
-        colors={[colors.background.primary, colors.background.secondary]}
-        style={StyleSheet.absoluteFillObject}
-      />
-
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar style="light" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: Math.max(insets.bottom, 20) }
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
+        <View style={styles.content}>
+          <View style={styles.badge}>
+            <Ionicons name="finger-print-outline" size={32} color={colors.text.primary} />
+          </View>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
+
+          <View style={styles.buttons}>
+            <GlassButton
+              title="Continue with Apple"
+              onPress={() => handleOAuth('apple')}
+              size="large"
+              loading={loadingProvider === 'apple'}
+              leftIcon={<Ionicons name="logo-apple" size={20} color={colors.text.primary} />}
+              style={styles.buttonSpacing}
+            />
+            <GlassButton
+              title="Continue with Google"
+              onPress={() => handleOAuth('google')}
+              size="large"
+              loading={loadingProvider === 'google'}
+              leftIcon={<GoogleIcon size={20} />}
+              style={styles.buttonSpacing}
+            />
           </View>
 
-          {/* OAuth Buttons */}
-          <View style={styles.oauthContainer}>
-            <TouchableOpacity
-              onPress={onGoogleSignIn}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <GlassCard style={styles.oauthButton}>
-                <Ionicons name="logo-google" size={24} color={colors.text.primary} />
-                <Text style={styles.oauthText}>Continue with Google</Text>
-              </GlassCard>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onAppleSignIn}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
-              <GlassCard style={styles.oauthButton}>
-                <Ionicons name="logo-apple" size={24} color={colors.text.primary} />
-                <Text style={styles.oauthText}>Continue with Apple</Text>
-              </GlassCard>
-            </TouchableOpacity>
-          </View>
-
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Email Form */}
-          <GlassCard style={styles.formCard}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={colors.text.tertiary} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor={colors.text.tertiary}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!loading}
-              />
-            </View>
+          <GlassButton
+            title="Continue with Email"
+            onPress={() => setShowEmailSheet(true)}
+            size="large"
+            leftIcon={<Ionicons name="mail-outline" size={20} color={colors.text.primary} />}
+          />
 
-            <View style={[styles.inputContainer, styles.inputSpacing]}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.text.tertiary} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={colors.text.tertiary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                editable={!loading}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={colors.text.tertiary}
-                />
-              </TouchableOpacity>
-            </View>
+          {oauthError ? <Text style={styles.errorText}>{oauthError}</Text> : null}
+        </View>
 
-            {error ? (
-              <Text style={styles.errorText}>{error}</Text>
-            ) : null}
-
-            <GlassButton
-              title="Sign In"
-              onPress={onSignInPress}
-              disabled={loading || !email || !password}
-              loading={loading}
-              style={styles.signInButton}
-            />
-          </GlassCard>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account?</Text>
-            <TouchableOpacity disabled={loading}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimer}>
+            By continuing, you agree to our{'\n'}
+            <Text style={styles.link} onPress={() => openLink(TERMS_URL)}>
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)}>
+              Privacy Policy
+            </Text>
+          </Text>
+        </View>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={showEmailSheet}
+        transparent
+        animationType="fade"
+        onRequestClose={closeEmailSheet}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={closeEmailSheet} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalWrapper}
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Sign in with Email</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.text.tertiary}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.text.tertiary}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
+              {emailError ? <Text style={styles.modalError}>{emailError}</Text> : null}
+              <GlassButton
+                title="Sign In"
+                onPress={handleEmailSubmit}
+                loading={emailLoading}
+                disabled={!email || !password}
+                size="large"
+              />
+              <Pressable onPress={closeEmailSheet} style={styles.modalCancel}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: colors.background.primary,
   },
   keyboardView: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 40,
   },
-  header: {
-    marginBottom: 40,
+  badge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: colors.surface.primary,
+    borderWidth: 1,
+    borderColor: colors.surface.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   title: {
-    fontSize: 34,
-    fontWeight: 'bold',
+    ...typography.title1,
     color: colors.text.primary,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    ...typography.callout,
     color: colors.text.secondary,
+    marginBottom: 32,
   },
-  oauthContainer: {
-    marginBottom: 24,
+  buttons: {
+    width: '100%',
   },
-  oauthButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    marginBottom: 12,
-  },
-  oauthText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginLeft: 12,
+  buttonSpacing: {
+    marginBottom: 16,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 24,
+    width: '100%',
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.glass.border,
+    backgroundColor: colors.surface.border,
   },
   dividerText: {
-    fontSize: 14,
-    color: colors.text.tertiary,
+    ...typography.caption1,
+    color: colors.text.secondary,
     marginHorizontal: 16,
-  },
-  formCard: {
-    padding: 20,
-    marginBottom: 24,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-  },
-  inputSpacing: {
-    marginTop: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text.primary,
-    marginLeft: 12,
+    letterSpacing: 1.5,
   },
   errorText: {
-    fontSize: 14,
-    color: '#ef4444',
     marginTop: 12,
-    marginBottom: 8,
+    ...typography.caption1,
+    color: '#f87171',
+    textAlign: 'center',
   },
-  signInButton: {
-    marginTop: 20,
-    paddingVertical: 16,
+  disclaimerContainer: {
+    paddingHorizontal: 32,
+    paddingBottom: 24,
+    paddingTop: 16,
   },
-  signInButtonText: {
-    fontSize: 16,
+  disclaimer: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  link: {
+    color: colors.text.secondary,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalCard: {
+    backgroundColor: colors.surface.primary,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.surface.border,
+  },
+  modalTitle: {
+    ...typography.title2,
+    color: colors.text.primary,
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    ...typography.subheadline,
+    color: colors.text.secondary,
+    marginBottom: 6,
+  },
+  input: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.surface.border,
+    backgroundColor: colors.background.secondary,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    ...typography.callout,
     color: colors.text.primary,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  modalError: {
+    ...typography.caption1,
+    color: '#f87171',
+    marginBottom: 12,
+  },
+  modalCancel: {
+    marginTop: 12,
     alignItems: 'center',
-    marginTop: 20,
   },
-  footerText: {
-    fontSize: 14,
+  modalCancelText: {
+    ...typography.callout,
     color: colors.text.secondary,
-  },
-  footerLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent.white,
-    marginLeft: 4,
   },
 });

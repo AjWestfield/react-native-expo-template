@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useNavigation } from '@react-navigation/native';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
@@ -11,68 +12,45 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { signOut } = useAuth();
-  const settingsItems = [
-    {
-      icon: 'videocam-outline',
-      title: 'Video Quality',
-      subtitle: 'Set default video quality',
-      value: 'HD',
-    },
-    {
-      icon: 'color-palette-outline',
-      title: 'Default Style',
-      subtitle: 'Choose your preferred style',
-      value: 'Cinematic',
-    },
-    {
-      icon: 'film-outline',
-      title: 'Export Settings',
-      subtitle: 'Configure video exports',
-      value: 'MP4',
-    },
-    {
-      icon: 'settings-outline',
-      title: 'Advanced',
-      subtitle: 'Advanced generation settings',
-      value: null,
-    },
-    {
-      icon: 'help-circle-outline',
-      title: 'Help & Support',
-      subtitle: 'Get help and tutorials',
-      value: null,
-    },
-    {
-      icon: 'information-circle-outline',
-      title: 'About',
-      subtitle: 'App information',
-      value: null,
-    },
-    {
-      icon: 'log-out-outline',
-      title: 'Sign Out',
-      subtitle: 'Sign out of your account',
-      value: null,
-    },
-  ];
+  const navigation = useNavigation();
 
-  const handleSettingPress = (title: string) => {
-    if (title === 'Sign Out') {
-      Alert.alert(
-        'Sign Out',
-        'Are you sure you want to sign out?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: () => signOut(),
-          },
-        ]
-      );
-    } else {
-      Alert.alert(title, 'This setting would open in a full app');
-    }
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => signOut(),
+        },
+      ]
+    );
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert('Edit Profile', 'This would open edit profile screen');
+  };
+
+  const handleShare = () => {
+    Alert.alert('Share', 'This would open share options');
+  };
+
+  const handleMyVideos = () => {
+    navigation.navigate('Gallery' as never);
+  };
+
+  const handleSettings = () => {
+    Alert.alert('Settings', 'This would open settings screen');
+  };
+
+  const handleHelp = () => {
+    Alert.alert('Help & Support', 'This would open help screen');
+  };
+
+  const handlePrivacy = () => {
+    Alert.alert('Privacy', 'This would open privacy settings');
   };
 
   return (
@@ -94,105 +72,124 @@ export default function ProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
         </View>
 
-        {/* User Card */}
-        <View style={styles.section}>
-          <GlassCard style={styles.userCard}>
-            <View style={styles.avatarContainer}>
-              <LinearGradient
-                colors={['#667EEA', '#764BA2']}
-                style={styles.avatar}
-              >
-                <Ionicons name="person" size={40} color={colors.text.primary} />
-              </LinearGradient>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          {/* Avatar with Badge */}
+          <View style={styles.avatarContainer}>
+            <LinearGradient
+              colors={['#667EEA', '#764BA2']}
+              style={styles.avatar}
+            >
+              <Ionicons name="person" size={60} color={colors.text.primary} />
+            </LinearGradient>
+            <View style={styles.verificationBadge}>
+              <Ionicons name="checkmark" size={16} color="#000000" />
             </View>
-            <Text style={styles.userName}>
-              {user?.fullName || user?.firstName || 'User'}
-            </Text>
-            <Text style={styles.userEmail}>
-              {user?.primaryEmailAddress?.emailAddress || 'No email'}
-            </Text>
+          </View>
+
+          {/* User Info */}
+          <Text style={styles.userName}>
+            {user?.fullName || user?.firstName || 'User'}
+          </Text>
+          <Text style={styles.username}>
+            @{user?.username || 'username'}
+          </Text>
+          <Text style={styles.joinedDate}>
+            Joined {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Text>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleEditProfile}
+          >
+            <Ionicons name="create-outline" size={20} color={colors.text.primary} />
+            <Text style={styles.actionButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-outline" size={20} color={colors.text.primary} />
+            <Text style={styles.actionButtonText}>Share</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* My Videos Section */}
+        <View style={styles.section}>
+          <GlassCard style={styles.menuCard}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleMyVideos}
+            >
+              <View style={styles.menuIconContainer}>
+                <Ionicons name="videocam" size={24} color={colors.text.primary} />
+              </View>
+              <Text style={styles.menuText}>My Videos</Text>
+              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+            </TouchableOpacity>
           </GlassCard>
         </View>
 
-        {/* Stats */}
+        {/* Settings Section */}
         <View style={styles.section}>
-          <View style={styles.statsGrid}>
-            <GlassCard style={styles.statCard}>
-              <Ionicons
-                name="videocam"
-                size={24}
-                color={colors.text.primary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statValue}>24</Text>
-              <Text style={styles.statLabel}>Videos Created</Text>
-            </GlassCard>
-
-            <GlassCard style={styles.statCard}>
-              <Ionicons
-                name="time"
-                size={24}
-                color={colors.text.primary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statValue}>5:32</Text>
-              <Text style={styles.statLabel}>Total Duration</Text>
-            </GlassCard>
-
-            <GlassCard style={styles.statCard}>
-              <Ionicons
-                name="heart"
-                size={24}
-                color={colors.text.primary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Favorites</Text>
-            </GlassCard>
-          </View>
-        </View>
-
-        {/* Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          {settingsItems.map((item, index) => (
+          <GlassCard style={styles.menuCard}>
             <TouchableOpacity
-              key={index}
-              style={styles.settingItem}
-              onPress={() => handleSettingPress(item.title)}
+              style={[styles.menuItem, styles.menuItemBorder]}
+              onPress={handleSettings}
             >
-              <GlassCard style={styles.settingCard}>
-                <View style={styles.settingIcon}>
-                  <Ionicons
-                    name={item.icon as any}
-                    size={20}
-                    color={colors.text.primary}
-                  />
-                </View>
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingTitle}>{item.title}</Text>
-                  <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
-                </View>
-                <View style={styles.settingRight}>
-                  {item.value && (
-                    <Text style={styles.settingValue}>{item.value}</Text>
-                  )}
-                  <Ionicons
-                    name="chevron-forward"
-                    size={20}
-                    color={colors.text.tertiary}
-                  />
-                </View>
-              </GlassCard>
+              <View style={styles.menuIconContainer}>
+                <Ionicons name="settings-outline" size={24} color={colors.text.primary} />
+              </View>
+              <Text style={styles.menuText}>Settings</Text>
+              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
             </TouchableOpacity>
-          ))}
+
+            <TouchableOpacity
+              style={[styles.menuItem, styles.menuItemBorder]}
+              onPress={handleHelp}
+            >
+              <View style={styles.menuIconContainer}>
+                <Ionicons name="help-circle-outline" size={24} color={colors.text.primary} />
+              </View>
+              <Text style={styles.menuText}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handlePrivacy}
+            >
+              <View style={styles.menuIconContainer}>
+                <Ionicons name="shield-outline" size={24} color={colors.text.primary} />
+              </View>
+              <Text style={styles.menuText}>Privacy</Text>
+              <Ionicons name="chevron-forward" size={24} color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </GlassCard>
         </View>
 
-        {/* Version */}
-        <Text style={styles.version}>AI Video Generator v1.0.0</Text>
+        {/* Sign Out Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#FF4444" />
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -207,115 +204,141 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    // paddingBottom is set dynamically with safe area insets
+    paddingBottom: spacing.lg,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    ...typography.hero,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  profileSection: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: spacing.lg,
+  },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verificationBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#00FF00',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: colors.background.primary,
+  },
+  userName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  username: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  joinedDate: {
+    fontSize: 14,
+    color: colors.text.tertiary,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.text.primary,
   },
   section: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.title2,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-  userCard: {
-    padding: spacing.xl,
-    alignItems: 'center',
+  menuCard: {
+    padding: 0,
+    overflow: 'hidden',
   },
-  avatarContainer: {
-    marginBottom: spacing.md,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userName: {
-    ...typography.title1,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  userEmail: {
-    ...typography.subheadline,
-    color: colors.text.secondary,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  statCard: {
-    flex: 1,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  statIcon: {
-    marginBottom: spacing.sm,
-  },
-  statValue: {
-    ...typography.title2,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-    fontWeight: '700',
-  },
-  statLabel: {
-    ...typography.caption1,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  settingItem: {
-    marginBottom: spacing.sm,
-  },
-  settingCard: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
-  settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.glass.backgroundLight,
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.glass.border,
+  },
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  settingContent: {
+  menuText: {
     flex: 1,
-  },
-  settingTitle: {
-    ...typography.headline,
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.xs,
   },
-  settingSubtitle: {
-    ...typography.caption1,
-    color: colors.text.secondary,
-  },
-  settingRight: {
+  signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 68, 68, 0.3)',
+    paddingVertical: spacing.lg,
     gap: spacing.sm,
   },
-  settingValue: {
-    ...typography.subheadline,
-    color: colors.text.secondary,
-    fontWeight: '500',
-  },
-  version: {
-    ...typography.caption1,
-    color: colors.text.tertiary,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF4444',
   },
 });
