@@ -5,12 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 
 import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TemplatesScreen from './src/screens/TemplatesScreen';
+import SignInScreen from './src/screens/SignInScreen';
 import { darkTheme, colors } from './src/theme/colors';
+import { tokenCache } from './src/utils/tokenCache';
 
 const Tab = createBottomTabNavigator();
 
@@ -95,13 +98,29 @@ function Navigation() {
   );
 }
 
+function RootNavigator() {
+  const { isSignedIn } = useAuth();
+
+  return (
+    <NavigationContainer theme={darkTheme}>
+      <StatusBar style="light" />
+      {isSignedIn ? <Navigation /> : <SignInScreen />}
+    </NavigationContainer>
+  );
+}
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error('Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env');
+}
+
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer theme={darkTheme}>
-        <StatusBar style="light" />
-        <Navigation />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <SafeAreaProvider>
+        <RootNavigator />
+      </SafeAreaProvider>
+    </ClerkProvider>
   );
 }
