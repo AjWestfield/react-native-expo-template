@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "jyelmg",
+    "slug": "jyelmg",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jyelmg.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#000000"
+      },
+      "package": "com.jyelmg.app"
+    },
+    "web": {},
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
