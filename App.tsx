@@ -9,6 +9,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import TemplatesScreen from './src/screens/TemplatesScreen';
 import { darkTheme, colors } from './src/theme/colors';
 
 const Tab = createBottomTabNavigator();
@@ -24,6 +25,8 @@ function Navigation() {
 
           if (route.name === 'Generate') {
             iconName = focused ? 'sparkles' : 'sparkles-outline';
+          } else if (route.name === 'Templates') {
+            iconName = focused ? 'albums' : 'albums-outline';
           } else if (route.name === 'Gallery') {
             iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'Profile') {
@@ -65,6 +68,13 @@ function Navigation() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Generate',
+        }}
+      />
+      <Tab.Screen
+        name="Templates"
+        component={TemplatesScreen}
+        options={{
+          tabBarLabel: 'Templates',
         }}
       />
       <Tab.Screen
