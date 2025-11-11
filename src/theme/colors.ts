@@ -23,10 +23,18 @@ export const colors = {
     tertiary: '#1A1A1A',     // Dark gray
   },
 
+  // Solid surfaces for non-glass UI
+  surface: {
+    primary: '#151515',
+    secondary: '#1F1F1F',
+    border: '#2A2A2A',
+  },
+
   // Glass morphic colors
   glass: {
     background: 'rgba(255, 255, 255, 0.05)',     // Glass background
     backgroundLight: 'rgba(255, 255, 255, 0.08)', // Lighter glass
+    backgroundMedium: 'rgba(255, 255, 255, 0.12)', // Mid glass tone
     border: 'rgba(255, 255, 255, 0.1)',          // Glass border
     borderLight: 'rgba(255, 255, 255, 0.15)',    // Lighter glass border
     highlight: 'rgba(255, 255, 255, 0.12)',      // Glass on hover/press

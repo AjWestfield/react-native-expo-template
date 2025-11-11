@@ -10,28 +10,28 @@ interface VideoCardProps {
   video: GeneratedVideo;
   onPress: () => void;
   onFavorite?: () => void;
+  fullWidth?: boolean;
 }
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - spacing.lg * 3) / 2;
 
 export const VideoCard: React.FC<VideoCardProps> = ({
   video,
   onPress,
   onFavorite,
+  fullWidth = false,
 }) => {
-  const aspectRatioHeight =
-    video.aspectRatio === '16:9'
-      ? cardWidth * 0.5625
-      : video.aspectRatio === '9:16'
-      ? cardWidth * 1.777
-      : video.aspectRatio === '1:1'
-      ? cardWidth
-      : cardWidth * 0.75;
+  // Calculate card width based on layout
+  const cardWidth = fullWidth
+    ? width - spacing.lg * 2
+    : (width - spacing.lg * 2 - spacing.md) / 2;
+
+  // Use vertical aspect ratio (9:16) but more compact for full width single view
+  const aspectRatioHeight = fullWidth ? cardWidth * 1.2 : cardWidth * 1.777;
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, fullWidth && { width: cardWidth }]}
       onPress={onPress}
       activeOpacity={0.8}
     >
@@ -108,11 +108,10 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: cardWidth,
-    marginBottom: spacing.md,
+    // width is set dynamically
   },
   card: {
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
     backgroundColor: colors.glass.background,
     borderWidth: 1,

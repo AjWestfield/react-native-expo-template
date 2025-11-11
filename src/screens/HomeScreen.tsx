@@ -1,92 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
-  Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  GlassCard,
-  GlassButton,
-  GlassInput,
-  GlassPill,
-  ProgressGlass,
-} from '../components';
+import { useNavigation } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
+import * as ImagePicker from 'expo-image-picker';
+import { GlassButton, SelectableGlassCard } from '../components';
 import {
   colors,
   typography,
   spacing,
   borderRadius,
 } from '../theme/colors';
-import { VideoStyle, AspectRatio, FPS, GenerationState } from '../types/video';
 
-const { width } = Dimensions.get('window');
-
-const STYLE_PRESETS: { value: VideoStyle; label: string; icon: string }[] = [
-  { value: 'cinematic', label: 'Cinematic', icon: 'film' },
-  { value: 'anime', label: 'Anime', icon: 'color-palette' },
-  { value: 'realistic', label: 'Realistic', icon: 'camera' },
-  { value: 'abstract', label: 'Abstract', icon: 'color-wand' },
-];
-
-const ASPECT_RATIOS: AspectRatio[] = ['16:9', '9:16', '1:1', '4:3'];
-const FPS_OPTIONS: FPS[] = [24, 30, 60];
+type Model = 'Sora 2' | 'VEO 3.1';
+type AspectRatio = 'vertical' | 'horizontal';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [prompt, setPrompt] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState<VideoStyle>('cinematic');
-  const [duration, setDuration] = useState(10); // seconds
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
-  const [fps, setFps] = useState<FPS>(30);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [generationState, setGenerationState] = useState<GenerationState>({
-    isGenerating: false,
-    progress: 0,
-  });
-  const [recentPrompts, setRecentPrompts] = useState<string[]>([
-    'A cinematic drone shot of a futuristic city at sunset',
-    'Anime style magical girl transformation sequence',
-    'Realistic ocean waves crashing on a beach',
-  ]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<Model>('Sora 2');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>('vertical');
+  const [isToolSelectorVisible, setIsToolSelectorVisible] = useState(false);
+  const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
 
-  // Simulate video generation
+  const pickImage = async () => {
+    // Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow access to your photo library to select an image.');
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setIsImagePreviewVisible(false);
+  };
+
+  const handleImagePress = () => {
+    setIsImagePreviewVisible(true);
+  };
+
+  const handleReplaceImage = () => {
+    setIsImagePreviewVisible(false);
+    setTimeout(() => pickImage(), 300);
+  };
+
   const handleGenerate = () => {
     if (!prompt.trim()) {
       Alert.alert('Error', 'Please enter a prompt');
       return;
     }
 
-    setGenerationState({ isGenerating: true, progress: 0 });
+    console.log('Navigating to VideoGeneration with:', {
+      prompt,
+      image: selectedImage,
+      model: selectedModel,
+      aspectRatio: selectedAspectRatio
+    });
 
-    // Simulate progress
-    const interval = setInterval(() => {
-      setGenerationState((prev) => {
-        const newProgress = prev.progress + 10;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setGenerationState({ isGenerating: false, progress: 0 });
-            Alert.alert(
-              'Success!',
-              'Your video has been generated and saved to Gallery'
-            );
-            // Add to recent prompts
-            if (!recentPrompts.includes(prompt)) {
-              setRecentPrompts([prompt, ...recentPrompts.slice(0, 4)]);
-            }
-          }, 500);
-          return { isGenerating: false, progress: 100 };
-        }
-        return { isGenerating: true, progress: newProgress };
-      });
-    }, 500);
+    // Navigate to video generation screen with all parameters
+    navigation.navigate('VideoGeneration' as never, {
+      prompt,
+      image: selectedImage,
+      model: selectedModel,
+      aspectRatio: selectedAspectRatio
+    } as never);
+
+    setPrompt('');
+    setSelectedImage(null);
+  };
+
+  const handleClear = () => {
+    setPrompt('');
+    setSelectedImage(null);
   };
 
   const characterCount = prompt.length;
@@ -98,222 +116,258 @@ export default function HomeScreen() {
         colors={['#000000', '#0A0A0A', '#000000']}
         style={StyleSheet.absoluteFillObject}
       />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.contentContainer,
-          {
-            paddingTop: insets.top + spacing.md,
-            paddingBottom: insets.bottom + 100,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {/* Hero Section */}
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>AI Video</Text>
-          <Text style={styles.heroSubtitle}>
-            Create stunning videos from text
-          </Text>
-        </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.contentContainer,
+              {
+                paddingTop: insets.top + spacing.lg,
+                paddingBottom: insets.bottom + 100,
+              },
+            ]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Camera Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconBackground}>
+                <Ionicons name="videocam" size={40} color={colors.text.primary} />
+              </View>
+            </View>
 
-        {/* Prompt Input */}
-        <View style={styles.section}>
-          <GlassCard style={styles.promptCard}>
-            <GlassInput
-              placeholder="Describe your video..."
-              value={prompt}
-              onChangeText={setPrompt}
-              multiline
-              height={140}
-              containerStyle={styles.promptInput}
-            />
-            <View style={styles.characterCount}>
-              <Text style={styles.characterCountText}>
-                {characterCount} / {maxCharacters}
+            {/* Title Section */}
+            <View style={styles.headerSection}>
+              <Text style={styles.title}>Video Generator</Text>
+              <Text style={styles.subtitle}>
+                Describe your video and let AI create it
               </Text>
             </View>
-          </GlassCard>
-        </View>
 
-        {/* Style Presets */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Style</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.pillsContainer}
-          >
-            {STYLE_PRESETS.map((style) => (
-              <GlassPill
-                key={style.value}
-                title={style.label}
-                active={selectedStyle === style.value}
-                onPress={() => setSelectedStyle(style.value)}
-                icon={
-                  <Ionicons
-                    name={style.icon as any}
-                    size={16}
-                    color={
-                      selectedStyle === style.value
-                        ? colors.text.primary
-                        : colors.text.secondary
-                    }
-                  />
-                }
-              />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Advanced Options */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.advancedToggle}
-            onPress={() => setShowAdvanced(!showAdvanced)}
-          >
-            <Text style={styles.sectionTitle}>Advanced Options</Text>
-            <Ionicons
-              name={showAdvanced ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={colors.text.primary}
-            />
-          </TouchableOpacity>
-
-          {showAdvanced && (
-            <GlassCard style={styles.advancedCard}>
-              {/* Duration */}
-              <View style={styles.optionRow}>
-                <Text style={styles.optionLabel}>Duration: {duration}s</Text>
-                <View style={styles.optionButtons}>
-                  {[5, 10, 30, 60].map((d) => (
-                    <TouchableOpacity
-                      key={d}
-                      style={[
-                        styles.optionButton,
-                        duration === d && styles.optionButtonActive,
-                      ]}
-                      onPress={() => setDuration(d)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionButtonText,
-                          duration === d && styles.optionButtonTextActive,
-                        ]}
+            {/* Prompt Input */}
+            <View style={styles.section}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter your video prompt here..."
+                  placeholderTextColor={colors.text.tertiary}
+                  value={prompt}
+                  onChangeText={setPrompt}
+                  multiline
+                  maxLength={maxCharacters}
+                  textAlignVertical="top"
+                />
+                <View style={styles.inputFooter}>
+                  <View style={styles.leftFooterButtons}>
+                    {selectedImage ? (
+                      <TouchableOpacity
+                        style={styles.imagePreviewButton}
+                        onPress={handleImagePress}
+                        activeOpacity={0.8}
                       >
-                        {d}s
+                        <Image
+                          source={{ uri: selectedImage }}
+                          style={styles.previewImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.removePreviewButton}>
+                          <Ionicons name="close" size={12} color="#FFFFFF" />
+                        </View>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.imageIconButton}
+                        onPress={pickImage}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="image-outline" size={20} color={colors.text.secondary} />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={styles.toolSelectorButton}
+                      onPress={() => setIsToolSelectorVisible(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="videocam-outline" size={18} color={colors.text.secondary} />
+                      <Text style={styles.toolSelectorText}>
+                        {selectedModel} • {selectedAspectRatio === 'vertical' ? '9:16' : '16:9'}
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Aspect Ratio */}
-              <View style={styles.optionRow}>
-                <Text style={styles.optionLabel}>Aspect Ratio</Text>
-                <View style={styles.optionButtons}>
-                  {ASPECT_RATIOS.map((ratio) => (
-                    <TouchableOpacity
-                      key={ratio}
-                      style={[
-                        styles.optionButton,
-                        aspectRatio === ratio && styles.optionButtonActive,
-                      ]}
-                      onPress={() => setAspectRatio(ratio)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionButtonText,
-                          aspectRatio === ratio && styles.optionButtonTextActive,
-                        ]}
-                      >
-                        {ratio}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* FPS */}
-              <View style={[styles.optionRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.optionLabel}>Frame Rate</Text>
-                <View style={styles.optionButtons}>
-                  {FPS_OPTIONS.map((f) => (
-                    <TouchableOpacity
-                      key={f}
-                      style={[
-                        styles.optionButton,
-                        fps === f && styles.optionButtonActive,
-                      ]}
-                      onPress={() => setFps(f)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionButtonText,
-                          fps === f && styles.optionButtonTextActive,
-                        ]}
-                      >
-                        {f}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </GlassCard>
-          )}
-        </View>
-
-        {/* Generation Progress */}
-        {generationState.isGenerating && (
-          <View style={styles.section}>
-            <ProgressGlass
-              progress={generationState.progress}
-              label="Generating your video..."
-            />
-          </View>
-        )}
-
-        {/* Generate Button */}
-        <View style={styles.section}>
-          <GlassButton
-            title="Generate Video"
-            onPress={handleGenerate}
-            size="large"
-            loading={generationState.isGenerating}
-            disabled={generationState.isGenerating || !prompt.trim()}
-          />
-        </View>
-
-        {/* Recent Prompts */}
-        {recentPrompts.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Prompts</Text>
-            {recentPrompts.map((recentPrompt, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.recentPromptCard}
-                onPress={() => setPrompt(recentPrompt)}
-              >
-                <GlassCard>
-                  <View style={styles.recentPromptContent}>
-                    <Ionicons
-                      name="time-outline"
-                      size={20}
-                      color={colors.text.secondary}
-                    />
-                    <Text
-                      style={styles.recentPromptText}
-                      numberOfLines={2}
-                    >
-                      {recentPrompt}
+                  </View>
+                  <View style={styles.characterCount}>
+                    <Text style={styles.characterCountText}>
+                      {characterCount} / {maxCharacters}
                     </Text>
                   </View>
-                </GlassCard>
-              </TouchableOpacity>
-            ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Generate Button */}
+            <View style={styles.section}>
+              <GlassButton
+                title={isGenerating ? 'Generating...' : 'Generate Video'}
+                onPress={handleGenerate}
+                size="large"
+                loading={isGenerating}
+                disabled={!prompt.trim() || isGenerating}
+                leftIcon={<Ionicons name="sparkles" size={20} color={colors.text.primary} />}
+              />
+            </View>
+
+            {/* Clear Button */}
+            <View style={styles.section}>
+              <GlassButton
+                title="Clear"
+                onPress={handleClear}
+                size="large"
+                leftIcon={<Ionicons name="refresh" size={20} color={colors.text.primary} />}
+              />
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+
+      {/* Tool Selector Modal */}
+      <Modal
+        visible={isToolSelectorVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsToolSelectorVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsToolSelectorVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalContainer}>
+                <BlurView intensity={80} tint="dark" style={styles.modalBlur}>
+                  <ScrollView
+                    style={styles.modalScrollView}
+                    contentContainerStyle={styles.modalContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {/* Modal Header */}
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>Tool Settings</Text>
+                      <TouchableOpacity
+                        onPress={() => setIsToolSelectorVisible(false)}
+                        style={styles.closeButton}
+                      >
+                        <Ionicons name="close" size={24} color={colors.text.primary} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Model Selection */}
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Model</Text>
+                      <SelectableGlassCard
+                        title="Sora 2"
+                        description="OpenAI's latest video model"
+                        icon="flash"
+                        selected={selectedModel === 'Sora 2'}
+                        onPress={() => setSelectedModel('Sora 2')}
+                        compact
+                      />
+                      <SelectableGlassCard
+                        title="VEO 3.1"
+                        description="Google's latest video model"
+                        icon="sparkles"
+                        selected={selectedModel === 'VEO 3.1'}
+                        onPress={() => setSelectedModel('VEO 3.1')}
+                        compact
+                      />
+                    </View>
+
+                    {/* Aspect Ratio Selection */}
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Aspect Ratio</Text>
+                      <SelectableGlassCard
+                        title="Vertical"
+                        description="9:16 for mobile"
+                        icon="phone-portrait"
+                        selected={selectedAspectRatio === 'vertical'}
+                        onPress={() => setSelectedAspectRatio('vertical')}
+                        compact
+                      />
+                      <SelectableGlassCard
+                        title="Horizontal"
+                        description="16:9 for desktop"
+                        icon="phone-landscape"
+                        selected={selectedAspectRatio === 'horizontal'}
+                        onPress={() => setSelectedAspectRatio('horizontal')}
+                        compact
+                      />
+                    </View>
+
+                    {/* Done Button */}
+                    <GlassButton
+                      title="Done"
+                      onPress={() => setIsToolSelectorVisible(false)}
+                      size="large"
+                    />
+                  </ScrollView>
+                </BlurView>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        )}
-      </ScrollView>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={isImagePreviewVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsImagePreviewVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsImagePreviewVisible(false)}>
+          <View style={styles.imageModalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.imageModalContainer}>
+                <BlurView intensity={80} tint="dark" style={styles.imageModalBlur}>
+                  <View style={styles.imageModalContent}>
+                    {/* Image Preview */}
+                    <View style={styles.imagePreviewContainer}>
+                      {selectedImage && (
+                        <Image
+                          source={{ uri: selectedImage }}
+                          style={styles.fullPreviewImage}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View style={styles.imageModalActions}>
+                      <GlassButton
+                        title="Remove Image"
+                        onPress={removeImage}
+                        size="large"
+                        leftIcon={<Ionicons name="trash-outline" size={20} color={colors.text.primary} />}
+                      />
+                      <GlassButton
+                        title="Replace Image"
+                        onPress={handleReplaceImage}
+                        size="large"
+                        leftIcon={<Ionicons name="images-outline" size={20} color={colors.text.primary} />}
+                      />
+                      <GlassButton
+                        title="Keep Image"
+                        onPress={() => setIsImagePreviewVisible(false)}
+                        size="large"
+                        leftIcon={<Ionicons name="checkmark" size={20} color={colors.text.primary} />}
+                      />
+                    </View>
+                  </View>
+                </BlurView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -323,110 +377,212 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.primary,
   },
-  scrollView: {
+  keyboardView: {
     flex: 1,
   },
   contentContainer: {
-    // paddingBottom is set dynamically with safe area insets
-  },
-  hero: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    flexGrow: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroTitle: {
-    ...typography.hero,
+  iconContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  iconBackground: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: 'rgba(45, 45, 45, 1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
-  heroSubtitle: {
-    ...typography.body,
+  subtitle: {
+    fontSize: 16,
     color: colors.text.secondary,
+    textAlign: 'center',
   },
   section: {
+    width: '100%',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  sectionTitle: {
-    ...typography.title2,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  promptCard: {
+  inputContainer: {
+    backgroundColor: 'rgba(30, 30, 30, 1)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(60, 60, 60, 1)',
     padding: spacing.lg,
+    minHeight: 160,
   },
-  promptInput: {
-    marginBottom: 0,
+  textInput: {
+    ...typography.body,
+    color: colors.text.primary,
+    minHeight: 100,
+  },
+  inputFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  leftFooterButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  imageIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(45, 45, 45, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewButton: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    overflow: 'visible',
+    position: 'relative',
+    borderWidth: 2,
+    borderColor: 'rgba(102, 126, 234, 0.6)',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: borderRadius.md - 2,
+  },
+  removePreviewButton: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toolSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(45, 45, 45, 0.8)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    height: 36,
+  },
+  toolSelectorText: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontWeight: '500',
   },
   characterCount: {
     alignItems: 'flex-end',
-    marginTop: spacing.sm,
   },
   characterCountText: {
-    ...typography.caption1,
+    fontSize: 14,
     color: colors.text.tertiary,
   },
-  pillsContainer: {
-    paddingRight: spacing.lg,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  advancedToggle: {
+  modalContainer: {
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '75%',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+  modalBlur: {
+    borderRadius: borderRadius.xl,
+  },
+  modalScrollView: {
+    maxHeight: '100%',
+  },
+  modalContent: {
+    padding: spacing.lg,
+    backgroundColor: 'rgba(20, 20, 20, 0.8)',
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  advancedCard: {
-    padding: spacing.lg,
-  },
-  optionRow: {
-    marginBottom: spacing.lg,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.border,
-  },
-  optionLabel: {
-    ...typography.subheadline,
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.text.primary,
-    marginBottom: spacing.sm,
-    fontWeight: '500',
   },
-  optionButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  optionButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-  },
-  optionButtonActive: {
-    backgroundColor: colors.glass.backgroundLight,
-    borderColor: colors.glass.borderLight,
-  },
-  optionButtonText: {
-    ...typography.subheadline,
-    color: colors.text.secondary,
-    fontWeight: '500',
-  },
-  optionButtonTextActive: {
-    color: colors.text.primary,
-    fontWeight: '600',
-  },
-  recentPromptCard: {
-    marginBottom: spacing.sm,
-  },
-  recentPromptContent: {
-    flexDirection: 'row',
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(45, 45, 45, 0.8)',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
   },
-  recentPromptText: {
-    ...typography.subheadline,
+  modalSection: {
+    marginBottom: spacing.md,
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  imageModalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContainer: {
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+  imageModalBlur: {
+    borderRadius: borderRadius.xl,
+  },
+  imageModalContent: {
+    padding: spacing.xl,
+    backgroundColor: 'rgba(20, 20, 20, 0.8)',
+  },
+  imagePreviewContainer: {
+    width: '100%',
+    height: 300,
+    marginBottom: spacing.xl,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageModalActions: {
+    gap: spacing.md,
   },
 });
