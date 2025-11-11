@@ -3,12 +3,22 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { GlassCard } from '../components';
 import { colors, typography, spacing, borderRadius } from '../theme/colors';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+
   const settingsItems = [
+    {
+      icon: 'card-outline',
+      title: 'Billing & Subscription',
+      subtitle: 'Manage your plan and payments',
+      value: null,
+      action: 'billing',
+    },
     {
       icon: 'videocam-outline',
       title: 'Video Quality',
@@ -47,8 +57,12 @@ export default function ProfileScreen() {
     },
   ];
 
-  const handleSettingPress = (title: string) => {
-    Alert.alert(title, 'This setting would open in a full app');
+  const handleSettingPress = (title: string, action?: string) => {
+    if (action === 'billing') {
+      navigation.navigate('Billing' as never);
+    } else {
+      Alert.alert(title, 'This setting would open in a full app');
+    }
   };
 
   return (
@@ -134,7 +148,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={index}
               style={styles.settingItem}
-              onPress={() => handleSettingPress(item.title)}
+              onPress={() => handleSettingPress(item.title, item.action)}
             >
               <GlassCard style={styles.settingCard}>
                 <View style={styles.settingIcon}>

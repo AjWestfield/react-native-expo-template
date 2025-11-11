@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -5,12 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, Platform } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TemplatesScreen from './src/screens/TemplatesScreen';
+import { BillingScreen } from './src/screens/BillingScreen';
 import { darkTheme, colors } from './src/theme/colors';
+import { STRIPE_CONFIG } from './src/config/stripe.config';
+import { StripeAgent } from './src/services/stripeAgent';
 
 const Tab = createBottomTabNavigator();
 
@@ -91,17 +96,35 @@ function Navigation() {
           tabBarLabel: 'Profile',
         }}
       />
+      <Tab.Screen
+        name="Billing"
+        component={BillingScreen}
+        options={{
+          tabBarButton: () => null, // Hide from tab bar
+        }}
+      />
     </Tab.Navigator>
   );
 }
 
 export default function App() {
+  // Initialize Stripe Agent
+  React.useEffect(() => {
+    StripeAgent.initialize(STRIPE_CONFIG.apiBaseUrl, STRIPE_CONFIG.publishableKey);
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={darkTheme}>
-        <StatusBar style="light" />
-        <Navigation />
-      </NavigationContainer>
+      <StripeProvider
+        publishableKey={STRIPE_CONFIG.publishableKey}
+        merchantIdentifier={STRIPE_CONFIG.merchantIdentifier}
+        urlScheme={STRIPE_CONFIG.urlScheme}
+      >
+        <NavigationContainer theme={darkTheme}>
+          <StatusBar style="light" />
+          <Navigation />
+        </NavigationContainer>
+      </StripeProvider>
     </SafeAreaProvider>
   );
 }
